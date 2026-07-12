@@ -109,3 +109,16 @@ class MFFNINIRS(nn.Module):
         if return_features:
             return fused
         return logits
+
+    def freeze_spectral_backbone(self):
+        if self.spectral_branch is None:
+            raise RuntimeError("Cannot freeze a missing spectral branch.")
+        for parameter in self.spectral_branch.parameters():
+            parameter.requires_grad = False
+        self.spectral_branch.eval()
+
+    def keep_frozen_modules_in_eval(self):
+        if self.spectral_branch is not None and not any(
+            parameter.requires_grad for parameter in self.spectral_branch.parameters()
+        ):
+            self.spectral_branch.eval()

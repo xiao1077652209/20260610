@@ -52,6 +52,12 @@ FINAL_CLASSIFIER_FEATURE_MODE = "fused"    # fused recommended for residual fusi
 FUSION_DROPOUT = 0.15
 FUSION_HIDDEN_DIM = 256             # used by ACGF lightweight gated fusion
 FUSION_INITIAL_IMAGE_WEIGHT = 0.05   # start close to the strong spectral-only model
+LOAD_SPECTRAL_PRETRAINED = True
+SPECTRAL_PRETRAINED_PATH = ""       # empty: auto-discover the matching spectral-only model in RESULTS_DIR
+FREEZE_SPECTRAL_BACKBONE = True
+SPECTRAL_BACKBONE_LR = 1e-6         # used only when the spectral backbone is not frozen
+IMAGE_BACKBONE_LR = 5e-6
+FUSION_HEAD_LR = 1e-4
 USE_CENTER_LOSS = False             # keep disabled on the mainline: current server result shows it hurts PSO-SVM test accuracy
 CENTER_LOSS_WEIGHT = 0.03
 CENTER_LOSS_LR = 1e-3
@@ -61,7 +67,7 @@ USE_BRANCH_AUX_LOSS = True
 USE_MODAL_ALIGN_LOSS = False
 MODAL_ALIGN_LOSS_WEIGHT = 0.01
 IMAGE_AUX_LOSS_WEIGHT = 0.02
-SPECTRAL_AUX_LOSS_WEIGHT = 0.05
+SPECTRAL_AUX_LOSS_WEIGHT = 0.00
 
 # Reproduction suites
 RUN_PAPER_BENCHMARKS = False

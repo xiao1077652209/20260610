@@ -178,14 +178,13 @@ class SpectralResidualFusion(nn.Module):
         )
         initial_logit = torch.logit(torch.tensor(float(initial_image_weight)))
         self.image_scale_logit = nn.Parameter(initial_logit)
-        self.output_norm = nn.LayerNorm(feature_dim)
 
     def forward(self, xm, xv):
         image_delta = self.image_adapter(xm)
         gate_input = torch.cat([xm, xv, torch.abs(xm - xv)], dim=1)
         gated_delta = self.gate(gate_input) * image_delta
         image_scale = torch.sigmoid(self.image_scale_logit)
-        return self.output_norm(xv + image_scale * gated_delta)
+        return xv + image_scale * gated_delta
 
 
 def build_fusion(name="dwgff", feature_dim=1024, dropout=0.0, hidden_dim=None, initial_image_weight=0.05):

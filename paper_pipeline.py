@@ -3,6 +3,7 @@ import gc
 import hashlib
 import json
 import os
+import glob
 import random
 import time
 from functools import partial
@@ -213,6 +214,9 @@ def validate_config():
         raise ValueError("FUSION_HIDDEN_DIM must be >= 1.")
     if not 0.0 < float(getattr(cfg, "FUSION_INITIAL_IMAGE_WEIGHT", 0.05)) < 1.0:
         raise ValueError("FUSION_INITIAL_IMAGE_WEIGHT must be between 0 and 1.")
+    for name in ("SPECTRAL_BACKBONE_LR", "IMAGE_BACKBONE_LR", "FUSION_HEAD_LR"):
+        if float(getattr(cfg, name, cfg.LEARNING_RATE)) <= 0.0:
+            raise ValueError(f"{name} must be > 0.")
     if getattr(cfg, "FUSION_DROPOUT", 0.0) < 0.0 or getattr(cfg, "FUSION_DROPOUT", 0.0) >= 1.0:
         raise ValueError("FUSION_DROPOUT must be in [0.0, 1.0).")
     if getattr(cfg, "IMAGE_AUX_LOSS_WEIGHT", 0.0) < 0.0:
@@ -799,9 +803,92 @@ def build_auxiliary_objective(model, device):
     return objective, optimizer, "center"
 
 
+def resolve_spectral_pretrained_path():
+    configured = str(getattr(cfg, "SPECTRAL_PRETRAINED_PATH", "")).strip()
+    if configured:
+        path = configured if os.path.isabs(configured) else os.path.join(cfg.BASE_DIR, configured)
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f"SPECTRAL_PRETRAINED_PATH does not exist: {path}")
+        return path
+
+    backbone = normalize_spectral_backbone_name(cfg.SPECTRAL_BACKBONE)
+    preprocessing = normalize_preprocessing_method(cfg.SPECTRAL_PREPROCESSING_METHOD).replace("+", "_")
+    pattern = os.path.join(RESULTS_DIR, f"*_{backbone}_*_spectral_only_*_{preprocessing}_*_model.pth")
+    candidates = sorted(glob.glob(pattern), key=os.path.getmtime, reverse=True)
+    if not candidates:
+        raise FileNotFoundError(
+            "No matching spectral-only checkpoint found. Set SPECTRAL_PRETRAINED_PATH to the "
+            f"94.17% spectral model. Searched: {pattern}"
+        )
+    return candidates[0]
+
+
+def load_spectral_pretrained_weights(model, device):
+    if not bool(getattr(cfg, "LOAD_SPECTRAL_PRETRAINED", False)):
+        return "", 0
+    if model.spectral_branch is None:
+        raise RuntimeError("LOAD_SPECTRAL_PRETRAINED requires an enabled spectral branch.")
+
+    checkpoint_path = resolve_spectral_pretrained_path()
+    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=True)
+    if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
+        checkpoint = checkpoint["state_dict"]
+    if not isinstance(checkpoint, dict):
+        raise TypeError(f"Unsupported checkpoint format: {checkpoint_path}")
+
+    prefix = "spectral_branch."
+    spectral_state = {
+        key[len(prefix):]: value
+        for key, value in checkpoint.items()
+        if key.startswith(prefix)
+    }
+    if not spectral_state:
+        raise RuntimeError(f"Checkpoint contains no '{prefix}*' parameters: {checkpoint_path}")
+    incompatible = model.spectral_branch.load_state_dict(spectral_state, strict=True)
+    if incompatible.missing_keys or incompatible.unexpected_keys:
+        raise RuntimeError(
+            f"Spectral checkpoint mismatch. Missing={incompatible.missing_keys}, "
+            f"unexpected={incompatible.unexpected_keys}"
+        )
+    print(f"  Loaded spectral pretrained weights: {checkpoint_path}")
+    print(f"  Loaded spectral tensors: {len(spectral_state)}")
+    return checkpoint_path, len(spectral_state)
+
+
+def build_model_optimizer(model):
+    groups = []
+    assigned = set()
+
+    def add_group(name, module, learning_rate):
+        if module is None:
+            return
+        parameters = [parameter for parameter in module.parameters() if parameter.requires_grad]
+        parameters = [parameter for parameter in parameters if id(parameter) not in assigned]
+        if not parameters:
+            return
+        assigned.update(id(parameter) for parameter in parameters)
+        groups.append({"params": parameters, "lr": float(learning_rate), "group_name": name})
+
+    add_group("image", model.image_branch, getattr(cfg, "IMAGE_BACKBONE_LR", cfg.LEARNING_RATE))
+    add_group("spectral", model.spectral_branch, getattr(cfg, "SPECTRAL_BACKBONE_LR", cfg.LEARNING_RATE))
+    remaining = [
+        parameter for parameter in model.parameters()
+        if parameter.requires_grad and id(parameter) not in assigned
+    ]
+    if remaining:
+        groups.append({
+            "params": remaining,
+            "lr": float(getattr(cfg, "FUSION_HEAD_LR", cfg.LEARNING_RATE)),
+            "group_name": "fusion_head",
+        })
+    if not groups:
+        raise RuntimeError("Model has no trainable parameters.")
+    return torch.optim.AdamW(groups, weight_decay=cfg.WEIGHT_DECAY)
+
+
 def train_model(model, dataloaders, device, experiment_name):
     criterion = nn.CrossEntropyLoss(label_smoothing=cfg.LABEL_SMOOTHING)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.LEARNING_RATE, weight_decay=cfg.WEIGHT_DECAY)
+    optimizer = build_model_optimizer(model)
     scheduler = build_training_scheduler(optimizer)
     auxiliary_criterion, auxiliary_optimizer, auxiliary_name = build_auxiliary_objective(model, device)
 
@@ -831,6 +918,9 @@ def train_model(model, dataloaders, device, experiment_name):
         f"Best metric: {cfg.BEST_MODEL_METRIC} | "
         f"Early stopping: {cfg.EARLY_STOPPING_ENABLED}"
     )
+    print("  Optimizer groups: " + ", ".join(
+        f"{group.get('group_name', 'group')}={group['lr']:.2e}" for group in optimizer.param_groups
+    ))
     if auxiliary_name != "none":
         print(
             f"  Auxiliary loss: {auxiliary_name} | "
@@ -845,6 +935,7 @@ def train_model(model, dataloaders, device, experiment_name):
         )
     for epoch in range(cfg.EPOCHS):
         model.train()
+        model.keep_frozen_modules_in_eval()
         use_auxiliary = use_center_loss_for_epoch(epoch + 1)
         running_loss = 0.0
         running_cls_loss = 0.0
@@ -927,7 +1018,7 @@ def train_model(model, dataloaders, device, experiment_name):
         elif epoch + 1 >= cfg.MIN_EPOCHS:
             epochs_without_improvement += 1
 
-        current_lr = optimizer.param_groups[0]["lr"]
+        current_lr = max(group["lr"] for group in optimizer.param_groups)
         print(
             f"  Epoch {epoch + 1:02d}/{cfg.EPOCHS} | "
             f"LR {current_lr:.2e} | "
@@ -1336,6 +1427,10 @@ def build_experiment_name(encoding_method, image_backbone, spectral_backbone, fu
         parts.append(f"h{int(getattr(cfg, 'FUSION_HIDDEN_DIM', 0))}")
     if normalize_fusion_name(fusion_method) == "spectral_residual":
         parts.append(f"iw{_format_float_token(getattr(cfg, 'FUSION_INITIAL_IMAGE_WEIGHT', 0.05))}")
+    if bool(getattr(cfg, "LOAD_SPECTRAL_PRETRAINED", False)) and modality_mode != "image_only":
+        parts.append("spft")
+    if bool(getattr(cfg, "FREEZE_SPECTRAL_BACKBONE", False)) and modality_mode != "image_only":
+        parts.append("spfreeze")
     if center_loss_enabled():
         center_token = f"cl{_format_float_token(cfg.CENTER_LOSS_WEIGHT)}"
         if getattr(cfg, "CENTER_LOSS_NORMALIZE", True):
@@ -1396,6 +1491,10 @@ def train_and_evaluate_model(encoding_method, image_backbone, spectral_backbone,
         modality_mode=getattr(cfg, "MODALITY_MODE", "multimodal"),
     ).to(device)
 
+    spectral_checkpoint, loaded_spectral_tensors = load_spectral_pretrained_weights(model, device)
+    if bool(getattr(cfg, "FREEZE_SPECTRAL_BACKBONE", False)):
+        model.freeze_spectral_backbone()
+
     total_params = sum(param.numel() for param in model.parameters())
     print("\n" + "=" * 70)
     print("Model summary")
@@ -1403,6 +1502,8 @@ def train_and_evaluate_model(encoding_method, image_backbone, spectral_backbone,
     print(f"  Experiment: {experiment_name}")
     print(f"  Total parameters: {total_params:,}")
     print(f"  Classes: {class_labels.tolist()}")
+    print(f"  Spectral pretrained: {spectral_checkpoint or 'disabled'}")
+    print(f"  Spectral backbone frozen: {bool(getattr(cfg, 'FREEZE_SPECTRAL_BACKBONE', False))}")
     print(
         f"  Image backbone freeze stages: {int(getattr(cfg, 'FREEZE_IMAGE_BACKBONE_STAGES', 0))} | "
         f"Image dropout: {float(getattr(cfg, 'IMAGE_DROPOUT', 0.0)):.2f} | "
@@ -1410,6 +1511,10 @@ def train_and_evaluate_model(encoding_method, image_backbone, spectral_backbone,
     )
 
     model, history, best_epoch = train_model(model, dataloaders, device, experiment_name)
+    final_image_weight = None
+    if hasattr(model.fusion, "image_scale_logit"):
+        final_image_weight = float(torch.sigmoid(model.fusion.image_scale_logit).detach().cpu())
+        print(f"  Final residual image weight: {final_image_weight:.6f}")
 
     train_outputs = extract_features(model, dataloaders["train"], device)
     val_outputs = extract_features(model, dataloaders["val"], device)
@@ -1442,6 +1547,15 @@ def train_and_evaluate_model(encoding_method, image_backbone, spectral_backbone,
         "FreezeImageBackboneStages": int(getattr(cfg, "FREEZE_IMAGE_BACKBONE_STAGES", 0)),
         "ImageDropout": float(getattr(cfg, "IMAGE_DROPOUT", 0.0)),
         "FusionDropout": float(getattr(cfg, "FUSION_DROPOUT", 0.0)),
+        "SpectralPretrained": bool(getattr(cfg, "LOAD_SPECTRAL_PRETRAINED", False)),
+        "SpectralCheckpoint": spectral_checkpoint,
+        "LoadedSpectralTensors": loaded_spectral_tensors,
+        "SpectralBackboneFrozen": bool(getattr(cfg, "FREEZE_SPECTRAL_BACKBONE", False)),
+        "SpectralBackboneLR": float(getattr(cfg, "SPECTRAL_BACKBONE_LR", cfg.LEARNING_RATE)),
+        "ImageBackboneLR": float(getattr(cfg, "IMAGE_BACKBONE_LR", cfg.LEARNING_RATE)),
+        "FusionHeadLR": float(getattr(cfg, "FUSION_HEAD_LR", cfg.LEARNING_RATE)),
+        "InitialImageWeight": float(getattr(cfg, "FUSION_INITIAL_IMAGE_WEIGHT", 0.0)),
+        "FinalImageWeight": final_image_weight,
         "AuxLoss": "center" if center_loss_enabled() else "none",
         "CenterLossWeight": float(getattr(cfg, "CENTER_LOSS_WEIGHT", 0.0)) if center_loss_enabled() else 0.0,
         "CenterLossStartEpoch": int(getattr(cfg, "CENTER_LOSS_START_EPOCH", 1)) if center_loss_enabled() else 0,
