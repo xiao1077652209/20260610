@@ -27,17 +27,18 @@ ENCODING_TARGET_LENGTH = 778
 #PAPER_EXPECTED_SPECTRAL_LENGTH = 401
 #SPECTRAL_TARGET_LENGTH = 401
 #ENCODING_TARGET_LENGTH = 401
-SPECTRAL_PREPROCESSING_METHOD = "snv+d1+sg"  # follows the reference NIR branch order
+SPECTRAL_PREPROCESSING_METHOD = "snv+sgd1"   # stable SG smoothing + first derivative, keeps 778 bands
 SPECTRAL_PREPROCESSING_METHODS = [
     "msc+sg+d1",
     "snv+sg+d1",
+    "snv+sgd1",
 ]
 EVALUATION_PROTOCOL = "paper"      # paper: oversample before split; strict: split before oversampling train only
-EXPERIMENT_TAG = "paper_repro"
+EXPERIMENT_TAG = "spectral_sgd1_cosine"
 ENCODING_CACHE_TAG = "paper_rp401"
 
 # Default model
-MODALITY_MODE = "multimodal"      # multimodal / spectral_only / image_only
+MODALITY_MODE = "spectral_only"   # multimodal / spectral_only / image_only
 ENCODING_METHOD = "rp"             # rp / gadf / gasf / mtf
 IMAGE_BACKBONE = "resnet50"        # resnet50 / mobilenet_v2 / alexnet / vgg16 / shufflenet_v2
 SPECTRAL_BACKBONE = "multiscale_cnn"  # multiscale_cnn / attn_cnn / cnn1d / lstm / bilstm
@@ -52,10 +53,10 @@ FINAL_CLASSIFIER_FEATURE_MODE = "fused"    # fused recommended for residual fusi
 FUSION_DROPOUT = 0.15
 FUSION_HIDDEN_DIM = 256             # used by ACGF lightweight gated fusion
 FUSION_INITIAL_IMAGE_WEIGHT = 0.05   # start close to the strong spectral-only model
-LOAD_SPECTRAL_PRETRAINED = True
+LOAD_SPECTRAL_PRETRAINED = False
 SPECTRAL_PRETRAINED_PATH = ""       # empty: auto-discover the matching spectral-only model in RESULTS_DIR
-FREEZE_SPECTRAL_BACKBONE = True
-SPECTRAL_BACKBONE_LR = 1e-6         # used only when the spectral backbone is not frozen
+FREEZE_SPECTRAL_BACKBONE = False
+SPECTRAL_BACKBONE_LR = 1e-4
 IMAGE_BACKBONE_LR = 5e-6
 FUSION_HEAD_LR = 1e-4
 USE_CENTER_LOSS = False             # keep disabled on the mainline: current server result shows it hurts PSO-SVM test accuracy
@@ -66,8 +67,8 @@ CENTER_LOSS_NORMALIZE = True
 USE_BRANCH_AUX_LOSS = True
 USE_MODAL_ALIGN_LOSS = False
 MODAL_ALIGN_LOSS_WEIGHT = 0.01
-IMAGE_AUX_LOSS_WEIGHT = 0.02
-SPECTRAL_AUX_LOSS_WEIGHT = 0.00
+IMAGE_AUX_LOSS_WEIGHT = 0.00
+SPECTRAL_AUX_LOSS_WEIGHT = 0.05
 
 # Reproduction suites
 RUN_PAPER_BENCHMARKS = False
@@ -102,17 +103,17 @@ RANDOM_SEED = 42
 NUM_WORKERS = 4
 PIN_MEMORY = True
 BATCH_SIZE = 64
-EPOCHS = 60
+EPOCHS = 100
 LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-4
 STEP_LR_STEP_SIZE = 5
 STEP_LR_GAMMA = 0.1
-LR_SCHEDULER = "plateau"           # step / plateau / cosine / none
+LR_SCHEDULER = "cosine"            # step / plateau / cosine / none
 PLATEAU_LR_FACTOR = 0.5
 PLATEAU_LR_PATIENCE = 8
 MIN_LR = 1e-6
 EARLY_STOPPING_ENABLED = True
-EARLY_STOPPING_PATIENCE = 14
+EARLY_STOPPING_PATIENCE = 20
 MIN_EPOCHS = 12
 EARLY_STOPPING_MIN_DELTA = 1e-4
 BEST_MODEL_METRIC = "val_acc_or_loss"  # val_acc / val_loss / val_acc_or_loss
@@ -132,7 +133,7 @@ PSO_MAX_FEATURES = 256
 CLASSIFIER_CV_SCORING = "f1_macro"  # accuracy / balanced_accuracy / f1_macro
 PSO_SCORING = CLASSIFIER_CV_SCORING
 PSO_N_JOBS = -1
-LINEAR_SVM_C = [0.03, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0]
+LINEAR_SVM_C = [0.03, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 3.0, 5.0, 10.0]
 #LINEAR_SVM_C = [0.1, 0.3, 0.5, 1.0, 2.0, 5.0, 10.0]
 LOGREG_C = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
 CLASSIFIER_USE_FEATURE_SELECTION = False

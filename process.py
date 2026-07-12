@@ -30,6 +30,7 @@ SUPPORTED_PREPROCESSING_METHODS = (
     "snv",
     "ma",
     "sg",
+    "sgd1",
     "msc",
     "d1",
     "d2",
@@ -131,6 +132,18 @@ def SG(data, w=11, p=2):
     if w > data.shape[1]:
         raise ValueError(f"SG window size {w} exceeds spectral length {data.shape[1]}")
     return signal.savgol_filter(data, w, p, axis=1).astype(np.float32)
+
+
+def SGD1(data, w=11, p=2):
+    """Savitzky-Golay first derivative with smoothing in one operation."""
+    data = _as_2d_float_array(data)
+    if w < 3 or w % 2 == 0:
+        raise ValueError(f"SGD1 window size must be an odd integer >= 3, got {w}")
+    if p >= w:
+        raise ValueError(f"SGD1 polynomial order must be smaller than window size, got p={p}, w={w}")
+    if w > data.shape[1]:
+        raise ValueError(f"SGD1 window size {w} exceeds spectral length {data.shape[1]}")
+    return signal.savgol_filter(data, w, p, deriv=1, axis=1).astype(np.float32)
 
 
 # 一阶导数
@@ -236,6 +249,7 @@ def Preprocessing(method, data):
         "snv": SNV,
         "ma": MA,
         "sg": SG,
+        "sgd1": SGD1,
         "msc": MSC,
         "d1": D1,
         "d2": D2,
