@@ -44,6 +44,7 @@ from utils.image_encoding import (
 )
 from utils.oversampling import KMeansSMOTE
 from utils.pso_svm import PSOSVM
+from utils.wavelet_features import build_wavelet_views
 from sklearn.svm import LinearSVC
 from sklearn.linear_model import LogisticRegression
 
@@ -90,7 +91,7 @@ def _format_float_token(value):
 
 
 class SpectralImageDataset(Dataset):
-    def __init__(self, spectral_data, labels, encoding_dir, split_prefix, encoding_method, image_size, load_images=True):
+    def __init__(self, spectral_data, labels, encoding_dir, split_prefix, encoding_method, image_size, load_images=True, wavelet_data=None):
         self.spectral_data = torch.as_tensor(spectral_data, dtype=torch.float32)
         self.labels = torch.as_tensor(labels, dtype=torch.long)
         self.encoding_dir = encoding_dir
@@ -98,6 +99,7 @@ class SpectralImageDataset(Dataset):
         self.encoding_method = normalize_encoding_method(encoding_method)
         self.load_images = bool(load_images)
         self.image_size = int(image_size)
+        self.wavelet_data = None if wavelet_data is None else torch.as_tensor(wavelet_data, dtype=torch.float32)
         self.transform = transforms.Compose([
             transforms.Resize((image_size, image_size)),
             transforms.ToTensor(),
@@ -117,7 +119,9 @@ class SpectralImageDataset(Dataset):
         return Image.fromarray(image_rgb)
 
     def __getitem__(self, idx):
-        if self.load_images:
+        if self.wavelet_data is not None:
+            image = self.wavelet_data[idx]
+        elif self.load_images:
             image_path = os.path.join(self.encoding_dir, f"{self.split_prefix}_{idx}.npy")
             image_array = np.load(image_path).astype(np.float32)
             image = self.transform(self._to_rgb_image(image_array))
@@ -180,8 +184,8 @@ def set_seed(seed):
 
 def validate_config():
     modality_mode = str(getattr(cfg, "MODALITY_MODE", "multimodal")).lower()
-    if modality_mode not in ("multimodal", "spectral_only", "image_only"):
-        raise ValueError("MODALITY_MODE must be 'multimodal', 'spectral_only', or 'image_only'.")
+    if modality_mode not in ("multimodal", "wavelet_multiview", "spectral_only", "image_only"):
+        raise ValueError("Unsupported MODALITY_MODE.")
     if not np.isclose(cfg.TRAIN_RATIO + cfg.VAL_RATIO + cfg.TEST_RATIO, 1.0):
         raise ValueError("TRAIN_RATIO + VAL_RATIO + TEST_RATIO must sum to 1.")
     if cfg.ENCODING_METHOD not in SUPPORTED_ENCODINGS:
@@ -606,7 +610,9 @@ def generate_encoded_images(X, prefix, encoding_method, encoding_dir, encoding_p
 
 def build_dataloaders(splits, encoding_method, experiment_name):
     encoding_dir = get_encoding_dir(encoding_method)
-    load_images = str(getattr(cfg, "MODALITY_MODE", "multimodal")).lower() != "spectral_only"
+    modality_mode = str(getattr(cfg, "MODALITY_MODE", "multimodal")).lower()
+    use_wavelets = modality_mode == "wavelet_multiview"
+    load_images = modality_mode not in ("spectral_only", "wavelet_multiview")
     if cfg.EVALUATION_PROTOCOL == "paper":
         X_reference = np.vstack([splits["train"][0], splits["val"][0], splits["test"][0]])
     else:
@@ -621,12 +627,20 @@ def build_dataloaders(splits, encoding_method, experiment_name):
             X_split, _ = splits[split_name]
             generate_encoded_images(X_split, prefix, encoding_method, encoding_dir, encoding_params)
     else:
-        print("\nImage encoding skipped: spectral-only mode")
+        print("\nImage encoding skipped: spectral/wavelet mode")
 
     dataloaders = {}
     for split_name in ("train", "val", "test"):
         prefix = build_encoding_cache_prefix(encoding_method, split_name)
         X_split, y_split = splits[split_name]
+        wavelet_data = None
+        if use_wavelets:
+            wavelet_data = build_wavelet_views(
+                X_split,
+                wavelet=getattr(cfg, "WAVELET_NAME", "db4"),
+                level=getattr(cfg, "WAVELET_LEVEL", 3),
+                include_denoised=getattr(cfg, "WAVELET_INCLUDE_DENOISED", False),
+            )
         dataset = SpectralImageDataset(
             X_split,
             y_split,
@@ -635,6 +649,7 @@ def build_dataloaders(splits, encoding_method, experiment_name):
             encoding_method=encoding_method,
             image_size=cfg.IMAGE_SIZE,
             load_images=load_images,
+            wavelet_data=wavelet_data,
         )
         dataloaders[split_name] = DataLoader(
             dataset,
@@ -869,7 +884,10 @@ def build_model_optimizer(model):
         assigned.update(id(parameter) for parameter in parameters)
         groups.append({"params": parameters, "lr": float(learning_rate), "group_name": name})
 
-    add_group("image", model.image_branch, getattr(cfg, "IMAGE_BACKBONE_LR", cfg.LEARNING_RATE))
+    secondary_lr = getattr(cfg, "WAVELET_BACKBONE_LR", cfg.LEARNING_RATE) \
+        if str(getattr(cfg, "MODALITY_MODE", "")).lower() == "wavelet_multiview" \
+        else getattr(cfg, "IMAGE_BACKBONE_LR", cfg.LEARNING_RATE)
+    add_group("wavelet" if str(getattr(cfg, "MODALITY_MODE", "")).lower() == "wavelet_multiview" else "image", model.image_branch, secondary_lr)
     add_group("spectral", model.spectral_branch, getattr(cfg, "SPECTRAL_BACKBONE_LR", cfg.LEARNING_RATE))
     remaining = [
         parameter for parameter in model.parameters()
@@ -1409,6 +1427,9 @@ def build_experiment_name(encoding_method, image_backbone, spectral_backbone, fu
         cfg.EVALUATION_PROTOCOL,
     ]
     modality_mode = str(getattr(cfg, "MODALITY_MODE", "multimodal")).lower()
+    if modality_mode == "wavelet_multiview":
+        parts[0] = f"wavelet_{getattr(cfg, 'WAVELET_NAME', 'db4')}_l{int(getattr(cfg, 'WAVELET_LEVEL', 3))}"
+        parts[1] = str(getattr(cfg, "WAVELET_BACKBONE", "attn_cnn")).lower()
     if modality_mode != "multimodal":
         parts.append(modality_mode)
     preprocessing_method = normalize_preprocessing_method(cfg.SPECTRAL_PREPROCESSING_METHOD)
@@ -1489,6 +1510,8 @@ def train_and_evaluate_model(encoding_method, image_backbone, spectral_backbone,
         fusion_hidden_dim=getattr(cfg, "FUSION_HIDDEN_DIM", None),
         fusion_initial_image_weight=getattr(cfg, "FUSION_INITIAL_IMAGE_WEIGHT", 0.05),
         modality_mode=getattr(cfg, "MODALITY_MODE", "multimodal"),
+        wavelet_backbone=getattr(cfg, "WAVELET_BACKBONE", "attn_cnn"),
+        wavelet_in_channels=3 if bool(getattr(cfg, "WAVELET_INCLUDE_DENOISED", False)) else 2,
     ).to(device)
 
     spectral_checkpoint, loaded_spectral_tensors = load_spectral_pretrained_weights(model, device)
@@ -1505,8 +1528,8 @@ def train_and_evaluate_model(encoding_method, image_backbone, spectral_backbone,
     print(f"  Spectral pretrained: {spectral_checkpoint or 'disabled'}")
     print(f"  Spectral backbone frozen: {bool(getattr(cfg, 'FREEZE_SPECTRAL_BACKBONE', False))}")
     print(
-        f"  Image backbone freeze stages: {int(getattr(cfg, 'FREEZE_IMAGE_BACKBONE_STAGES', 0))} | "
-        f"Image dropout: {float(getattr(cfg, 'IMAGE_DROPOUT', 0.0)):.2f} | "
+        f"  Secondary branch: {'wavelet' if str(getattr(cfg, 'MODALITY_MODE', '')).lower() == 'wavelet_multiview' else 'image'} | "
+        f"Branch dropout: {float(getattr(cfg, 'IMAGE_DROPOUT', 0.0)):.2f} | "
         f"Fusion dropout: {float(getattr(cfg, 'FUSION_DROPOUT', 0.0)):.2f}"
     )
 

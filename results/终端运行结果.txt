@@ -1,4 +1,3 @@
-(ai_clone) root@autodl-container-273f4aae49-ac74ccde:~# cd 多模态10
 (ai_clone) root@autodl-container-273f4aae49-ac74ccde:~/多模态10# python main.py
 Device: cuda
   GPU: NVIDIA GeForce RTX 4090 D
@@ -48,159 +47,115 @@ Paper split (7:2:1)
 ======================================================================
 Spectral preprocessing
 ======================================================================
-  Method: snv+sgd1
-  train: 778 -> 778 bands
-  val: 778 -> 778 bands
-  test: 778 -> 778 bands
+  Method: snv+d1+sg
+  train: 778 -> 777 bands
+  val: 778 -> 777 bands
+  test: 778 -> 777 bands
 
-Image encoding skipped: spectral-only mode
+Image encoding skipped: spectral/wavelet mode
 
 ======================================================================
 Model summary
 ======================================================================
-  Experiment: rp_resnet50_multiscale_cnn_spectral_residual_paper_spectral_only_feat512_fz2_id0p1_fd0p15_h256_iw0p05_saux0p05_snv_sgd1_linear_svm_spectral_sgd1_cosine
-  Total parameters: 3,700,134
+  Experiment: wavelet_db4_l3_attn_cnn_multiscale_cnn_spectral_residual_paper_wavelet_multiview_feat512_fz2_id0p1_fd0p15_h256_iw0p05_iaux0p02_snv_d1_sg_linear_svm_paper_repro
+  Total parameters: 4,411,046
   Classes: [0, 1, 2, 3, 4, 5, 6]
   Spectral pretrained: disabled
   Spectral backbone frozen: False
-  Image backbone freeze stages: 2 | Image dropout: 0.10 | Fusion dropout: 0.15
+  Secondary branch: wavelet | Branch dropout: 0.10 | Fusion dropout: 0.15
 
 ======================================================================
 Training paper-style MFFN-INIRS
 ======================================================================
-  Scheduler: cosine | Best metric: val_acc_or_loss | Early stopping: True
-  Optimizer groups: spectral=1.00e-04, fusion_head=1.00e-04
-  Branch auxiliary loss | Image weight: 0.00 | Spectral weight: 0.05
-  Epoch 01/100 | LR 1.00e-04 | Train Loss 2.0520 (CE 1.9547, Aux 0.0973) | Train Acc 0.1736 | Val Loss 2.1747 (CE 2.0773, Aux 0.0974) | Val Acc 0.1408 | NoImprove 0/20
-  Epoch 02/100 | LR 1.00e-04 | Train Loss 1.9223 (CE 1.8250, Aux 0.0973) | Train Acc 0.2806 | Val Loss 2.3662 (CE 2.2689, Aux 0.0974) | Val Acc 0.1408 | NoImprove 0/20
-  Epoch 03/100 | LR 9.99e-05 | Train Loss 1.7184 (CE 1.6211, Aux 0.0973) | Train Acc 0.4194 | Val Loss 2.4346 (CE 2.3372, Aux 0.0974) | Val Acc 0.1408 | NoImprove 0/20
-  Epoch 04/100 | LR 9.98e-05 | Train Loss 1.5647 (CE 1.4676, Aux 0.0971) | Train Acc 0.4722 | Val Loss 2.5049 (CE 2.4076, Aux 0.0973) | Val Acc 0.1408 | NoImprove 0/20
-  Epoch 05/100 | LR 9.96e-05 | Train Loss 1.4070 (CE 1.3102, Aux 0.0968) | Train Acc 0.5694 | Val Loss 2.6708 (CE 2.5735, Aux 0.0974) | Val Acc 0.1408 | NoImprove 0/20
-  Epoch 06/100 | LR 9.94e-05 | Train Loss 1.3515 (CE 1.2550, Aux 0.0966) | Train Acc 0.5694 | Val Loss 2.6215 (CE 2.5242, Aux 0.0973) | Val Acc 0.1408 | NoImprove 0/20
-  Epoch 07/100 | LR 9.91e-05 | Train Loss 1.2560 (CE 1.1597, Aux 0.0963) | Train Acc 0.6333 | Val Loss 2.5157 (CE 2.4186, Aux 0.0970) | Val Acc 0.1408 | NoImprove 0/20
-  Epoch 08/100 | LR 9.88e-05 | Train Loss 1.1973 (CE 1.1015, Aux 0.0958) | Train Acc 0.6292 | Val Loss 1.8088 (CE 1.7126, Aux 0.0962) | Val Acc 0.3252 | NoImprove 0/20
-  Epoch 09/100 | LR 9.84e-05 | Train Loss 1.1526 (CE 1.0571, Aux 0.0954) | Train Acc 0.6847 | Val Loss 1.2829 (CE 1.1878, Aux 0.0952) | Val Acc 0.5874 | NoImprove 0/20
-  Epoch 10/100 | LR 9.80e-05 | Train Loss 1.0632 (CE 0.9682, Aux 0.0950) | Train Acc 0.7042 | Val Loss 1.1089 (CE 1.0142, Aux 0.0946) | Val Acc 0.6408 | NoImprove 0/20
-  Epoch 11/100 | LR 9.76e-05 | Train Loss 1.0473 (CE 0.9526, Aux 0.0947) | Train Acc 0.7236 | Val Loss 1.0709 (CE 0.9767, Aux 0.0942) | Val Acc 0.6796 | NoImprove 0/20
-  Epoch 12/100 | LR 9.71e-05 | Train Loss 1.0119 (CE 0.9175, Aux 0.0944) | Train Acc 0.7375 | Val Loss 0.9780 (CE 0.8842, Aux 0.0938) | Val Acc 0.7476 | NoImprove 0/20
-  Epoch 13/100 | LR 9.65e-05 | Train Loss 0.9715 (CE 0.8776, Aux 0.0939) | Train Acc 0.7569 | Val Loss 1.0833 (CE 0.9897, Aux 0.0936) | Val Acc 0.6699 | NoImprove 1/20
-  Epoch 14/100 | LR 9.59e-05 | Train Loss 0.9889 (CE 0.8951, Aux 0.0937) | Train Acc 0.7361 | Val Loss 0.9548 (CE 0.8618, Aux 0.0929) | Val Acc 0.7233 | NoImprove 2/20
-  Epoch 15/100 | LR 9.53e-05 | Train Loss 0.8880 (CE 0.7947, Aux 0.0933) | Train Acc 0.7958 | Val Loss 0.8825 (CE 0.7899, Aux 0.0925) | Val Acc 0.7670 | NoImprove 0/20
-  Epoch 16/100 | LR 9.46e-05 | Train Loss 0.8981 (CE 0.8051, Aux 0.0930) | Train Acc 0.7792 | Val Loss 1.0411 (CE 0.9486, Aux 0.0925) | Val Acc 0.6990 | NoImprove 1/20
-  Epoch 17/100 | LR 9.39e-05 | Train Loss 0.9018 (CE 0.8092, Aux 0.0925) | Train Acc 0.7736 | Val Loss 1.0375 (CE 0.9457, Aux 0.0918) | Val Acc 0.7184 | NoImprove 2/20
-  Epoch 18/100 | LR 9.31e-05 | Train Loss 0.8508 (CE 0.7587, Aux 0.0921) | Train Acc 0.8028 | Val Loss 0.8673 (CE 0.7760, Aux 0.0913) | Val Acc 0.7573 | NoImprove 0/20
-  Epoch 19/100 | LR 9.23e-05 | Train Loss 0.8033 (CE 0.7114, Aux 0.0919) | Train Acc 0.8097 | Val Loss 0.8522 (CE 0.7614, Aux 0.0908) | Val Acc 0.7670 | NoImprove 0/20
-  Epoch 20/100 | LR 9.14e-05 | Train Loss 0.7833 (CE 0.6919, Aux 0.0914) | Train Acc 0.8181 | Val Loss 0.9187 (CE 0.8282, Aux 0.0906) | Val Acc 0.7621 | NoImprove 1/20
-  Epoch 21/100 | LR 9.05e-05 | Train Loss 0.7545 (CE 0.6638, Aux 0.0908) | Train Acc 0.8361 | Val Loss 0.8058 (CE 0.7159, Aux 0.0899) | Val Acc 0.8010 | NoImprove 0/20
-  Epoch 22/100 | LR 8.96e-05 | Train Loss 0.7468 (CE 0.6565, Aux 0.0903) | Train Acc 0.8431 | Val Loss 0.7767 (CE 0.6877, Aux 0.0890) | Val Acc 0.8301 | NoImprove 0/20
-  Epoch 23/100 | LR 8.86e-05 | Train Loss 0.7099 (CE 0.6203, Aux 0.0896) | Train Acc 0.8556 | Val Loss 0.7532 (CE 0.6649, Aux 0.0883) | Val Acc 0.8350 | NoImprove 0/20
-  Epoch 24/100 | LR 8.76e-05 | Train Loss 0.7170 (CE 0.6279, Aux 0.0890) | Train Acc 0.8528 | Val Loss 0.7424 (CE 0.6546, Aux 0.0878) | Val Acc 0.8350 | NoImprove 0/20
-  Epoch 25/100 | LR 8.66e-05 | Train Loss 0.7021 (CE 0.6131, Aux 0.0890) | Train Acc 0.8583 | Val Loss 0.7430 (CE 0.6554, Aux 0.0876) | Val Acc 0.8204 | NoImprove 1/20
-  Epoch 26/100 | LR 8.55e-05 | Train Loss 0.6815 (CE 0.5932, Aux 0.0883) | Train Acc 0.8708 | Val Loss 0.8342 (CE 0.7467, Aux 0.0875) | Val Acc 0.7670 | NoImprove 2/20
-  Epoch 27/100 | LR 8.44e-05 | Train Loss 0.6570 (CE 0.5693, Aux 0.0878) | Train Acc 0.8861 | Val Loss 0.7136 (CE 0.6273, Aux 0.0863) | Val Acc 0.8447 | NoImprove 0/20
-  Epoch 28/100 | LR 8.32e-05 | Train Loss 0.6562 (CE 0.5688, Aux 0.0874) | Train Acc 0.8806 | Val Loss 0.7244 (CE 0.6383, Aux 0.0861) | Val Acc 0.8447 | NoImprove 1/20
-  Epoch 29/100 | LR 8.21e-05 | Train Loss 0.6378 (CE 0.5508, Aux 0.0870) | Train Acc 0.8875 | Val Loss 0.7518 (CE 0.6663, Aux 0.0855) | Val Acc 0.8447 | NoImprove 2/20
-  Epoch 30/100 | LR 8.08e-05 | Train Loss 0.6082 (CE 0.5218, Aux 0.0864) | Train Acc 0.9056 | Val Loss 0.6365 (CE 0.5517, Aux 0.0848) | Val Acc 0.8786 | NoImprove 0/20
-  Epoch 31/100 | LR 7.96e-05 | Train Loss 0.5581 (CE 0.4722, Aux 0.0859) | Train Acc 0.9319 | Val Loss 0.6223 (CE 0.5380, Aux 0.0843) | Val Acc 0.8689 | NoImprove 0/20
-  Epoch 32/100 | LR 7.83e-05 | Train Loss 0.6268 (CE 0.5408, Aux 0.0860) | Train Acc 0.8875 | Val Loss 0.6248 (CE 0.5406, Aux 0.0842) | Val Acc 0.8641 | NoImprove 1/20
-  Epoch 33/100 | LR 7.70e-05 | Train Loss 0.5621 (CE 0.4768, Aux 0.0854) | Train Acc 0.9292 | Val Loss 0.7359 (CE 0.6522, Aux 0.0837) | Val Acc 0.8398 | NoImprove 2/20
-  Epoch 34/100 | LR 7.57e-05 | Train Loss 0.5829 (CE 0.4981, Aux 0.0848) | Train Acc 0.9056 | Val Loss 0.7703 (CE 0.6866, Aux 0.0837) | Val Acc 0.8155 | NoImprove 3/20
-  Epoch 35/100 | LR 7.43e-05 | Train Loss 0.5614 (CE 0.4769, Aux 0.0845) | Train Acc 0.9222 | Val Loss 0.5912 (CE 0.5087, Aux 0.0825) | Val Acc 0.8835 | NoImprove 0/20
-  Epoch 36/100 | LR 7.30e-05 | Train Loss 0.5452 (CE 0.4612, Aux 0.0840) | Train Acc 0.9361 | Val Loss 0.6346 (CE 0.5520, Aux 0.0825) | Val Acc 0.8835 | NoImprove 1/20
-  Epoch 37/100 | LR 7.16e-05 | Train Loss 0.5612 (CE 0.4773, Aux 0.0839) | Train Acc 0.9097 | Val Loss 0.6170 (CE 0.5354, Aux 0.0816) | Val Acc 0.8738 | NoImprove 2/20
-  Epoch 38/100 | LR 7.02e-05 | Train Loss 0.5110 (CE 0.4282, Aux 0.0828) | Train Acc 0.9417 | Val Loss 0.6849 (CE 0.6030, Aux 0.0818) | Val Acc 0.8447 | NoImprove 3/20
-  Epoch 39/100 | LR 6.87e-05 | Train Loss 0.5282 (CE 0.4454, Aux 0.0828) | Train Acc 0.9319 | Val Loss 0.6107 (CE 0.5296, Aux 0.0811) | Val Acc 0.8786 | NoImprove 4/20
-  Epoch 40/100 | LR 6.73e-05 | Train Loss 0.5413 (CE 0.4586, Aux 0.0827) | Train Acc 0.9306 | Val Loss 0.6908 (CE 0.6094, Aux 0.0815) | Val Acc 0.8398 | NoImprove 5/20
-  Epoch 41/100 | LR 6.58e-05 | Train Loss 0.5320 (CE 0.4500, Aux 0.0820) | Train Acc 0.9389 | Val Loss 0.5694 (CE 0.4897, Aux 0.0797) | Val Acc 0.8981 | NoImprove 0/20
-  Epoch 42/100 | LR 6.43e-05 | Train Loss 0.5094 (CE 0.4281, Aux 0.0813) | Train Acc 0.9375 | Val Loss 0.5624 (CE 0.4830, Aux 0.0794) | Val Acc 0.8981 | NoImprove 0/20
-  Epoch 43/100 | LR 6.28e-05 | Train Loss 0.5135 (CE 0.4323, Aux 0.0812) | Train Acc 0.9306 | Val Loss 0.5726 (CE 0.4936, Aux 0.0791) | Val Acc 0.9029 | NoImprove 0/20
-  Epoch 44/100 | LR 6.13e-05 | Train Loss 0.5005 (CE 0.4197, Aux 0.0809) | Train Acc 0.9417 | Val Loss 0.5342 (CE 0.4558, Aux 0.0785) | Val Acc 0.9175 | NoImprove 0/20
-  Epoch 45/100 | LR 5.98e-05 | Train Loss 0.4601 (CE 0.3800, Aux 0.0802) | Train Acc 0.9653 | Val Loss 0.5325 (CE 0.4546, Aux 0.0779) | Val Acc 0.9320 | NoImprove 0/20
-  Epoch 46/100 | LR 5.82e-05 | Train Loss 0.4694 (CE 0.3895, Aux 0.0799) | Train Acc 0.9597 | Val Loss 0.5763 (CE 0.4986, Aux 0.0776) | Val Acc 0.8932 | NoImprove 1/20
-  Epoch 47/100 | LR 5.67e-05 | Train Loss 0.4623 (CE 0.3831, Aux 0.0792) | Train Acc 0.9611 | Val Loss 0.5569 (CE 0.4798, Aux 0.0771) | Val Acc 0.9175 | NoImprove 2/20
-  Epoch 48/100 | LR 5.52e-05 | Train Loss 0.4623 (CE 0.3832, Aux 0.0791) | Train Acc 0.9569 | Val Loss 0.5921 (CE 0.5151, Aux 0.0770) | Val Acc 0.8981 | NoImprove 3/20
-  Epoch 49/100 | LR 5.36e-05 | Train Loss 0.4595 (CE 0.3807, Aux 0.0789) | Train Acc 0.9597 | Val Loss 0.5800 (CE 0.5035, Aux 0.0764) | Val Acc 0.8883 | NoImprove 4/20
-  Epoch 50/100 | LR 5.21e-05 | Train Loss 0.4444 (CE 0.3660, Aux 0.0785) | Train Acc 0.9653 | Val Loss 0.6353 (CE 0.5589, Aux 0.0764) | Val Acc 0.8738 | NoImprove 5/20
-  Epoch 51/100 | LR 5.05e-05 | Train Loss 0.4523 (CE 0.3744, Aux 0.0779) | Train Acc 0.9667 | Val Loss 0.5648 (CE 0.4891, Aux 0.0757) | Val Acc 0.9126 | NoImprove 6/20
-  Epoch 52/100 | LR 4.89e-05 | Train Loss 0.4256 (CE 0.3481, Aux 0.0776) | Train Acc 0.9778 | Val Loss 0.5732 (CE 0.4980, Aux 0.0753) | Val Acc 0.8932 | NoImprove 7/20
-  Epoch 53/100 | LR 4.74e-05 | Train Loss 0.4484 (CE 0.3712, Aux 0.0772) | Train Acc 0.9569 | Val Loss 0.5551 (CE 0.4800, Aux 0.0750) | Val Acc 0.9272 | NoImprove 8/20
-  Epoch 54/100 | LR 4.58e-05 | Train Loss 0.4237 (CE 0.3472, Aux 0.0764) | Train Acc 0.9750 | Val Loss 0.5162 (CE 0.4420, Aux 0.0742) | Val Acc 0.9320 | NoImprove 0/20
-  Epoch 55/100 | LR 4.43e-05 | Train Loss 0.4258 (CE 0.3494, Aux 0.0764) | Train Acc 0.9764 | Val Loss 0.5212 (CE 0.4473, Aux 0.0739) | Val Acc 0.9320 | NoImprove 1/20
-  Epoch 56/100 | LR 4.28e-05 | Train Loss 0.4155 (CE 0.3396, Aux 0.0759) | Train Acc 0.9764 | Val Loss 0.4946 (CE 0.4211, Aux 0.0735) | Val Acc 0.9272 | NoImprove 0/20
-  Epoch 57/100 | LR 4.12e-05 | Train Loss 0.4182 (CE 0.3423, Aux 0.0759) | Train Acc 0.9792 | Val Loss 0.5313 (CE 0.4580, Aux 0.0733) | Val Acc 0.9223 | NoImprove 1/20
-  Epoch 58/100 | LR 3.97e-05 | Train Loss 0.4090 (CE 0.3337, Aux 0.0753) | Train Acc 0.9819 | Val Loss 0.5035 (CE 0.4306, Aux 0.0729) | Val Acc 0.9320 | NoImprove 2/20
-  Epoch 59/100 | LR 3.82e-05 | Train Loss 0.4100 (CE 0.3350, Aux 0.0750) | Train Acc 0.9750 | Val Loss 0.6637 (CE 0.5904, Aux 0.0733) | Val Acc 0.8738 | NoImprove 3/20
-  Epoch 60/100 | LR 3.67e-05 | Train Loss 0.4048 (CE 0.3303, Aux 0.0745) | Train Acc 0.9833 | Val Loss 0.4955 (CE 0.4235, Aux 0.0719) | Val Acc 0.9272 | NoImprove 4/20
-  Epoch 61/100 | LR 3.52e-05 | Train Loss 0.4032 (CE 0.3290, Aux 0.0741) | Train Acc 0.9833 | Val Loss 0.5925 (CE 0.5198, Aux 0.0727) | Val Acc 0.9029 | NoImprove 5/20
-  Epoch 62/100 | LR 3.37e-05 | Train Loss 0.4261 (CE 0.3519, Aux 0.0742) | Train Acc 0.9708 | Val Loss 0.5713 (CE 0.4994, Aux 0.0719) | Val Acc 0.9078 | NoImprove 6/20
-  Epoch 63/100 | LR 3.23e-05 | Train Loss 0.3907 (CE 0.3175, Aux 0.0733) | Train Acc 0.9833 | Val Loss 0.5057 (CE 0.4349, Aux 0.0708) | Val Acc 0.9272 | NoImprove 7/20
-  Epoch 64/100 | LR 3.08e-05 | Train Loss 0.3889 (CE 0.3158, Aux 0.0730) | Train Acc 0.9875 | Val Loss 0.5266 (CE 0.4553, Aux 0.0712) | Val Acc 0.9175 | NoImprove 8/20
-  Epoch 65/100 | LR 2.94e-05 | Train Loss 0.4103 (CE 0.3369, Aux 0.0734) | Train Acc 0.9722 | Val Loss 0.4929 (CE 0.4218, Aux 0.0711) | Val Acc 0.9320 | NoImprove 0/20
-  Epoch 66/100 | LR 2.80e-05 | Train Loss 0.3838 (CE 0.3108, Aux 0.0731) | Train Acc 0.9861 | Val Loss 0.5230 (CE 0.4525, Aux 0.0705) | Val Acc 0.9175 | NoImprove 1/20
-  Epoch 67/100 | LR 2.67e-05 | Train Loss 0.3780 (CE 0.3056, Aux 0.0724) | Train Acc 0.9917 | Val Loss 0.5138 (CE 0.4436, Aux 0.0702) | Val Acc 0.9223 | NoImprove 2/20
-  Epoch 68/100 | LR 2.53e-05 | Train Loss 0.3891 (CE 0.3167, Aux 0.0724) | Train Acc 0.9847 | Val Loss 0.4689 (CE 0.3992, Aux 0.0697) | Val Acc 0.9466 | NoImprove 0/20
-  Epoch 69/100 | LR 2.40e-05 | Train Loss 0.3811 (CE 0.3090, Aux 0.0721) | Train Acc 0.9861 | Val Loss 0.4544 (CE 0.3851, Aux 0.0693) | Val Acc 0.9466 | NoImprove 0/20
-  Epoch 70/100 | LR 2.27e-05 | Train Loss 0.3745 (CE 0.3029, Aux 0.0716) | Train Acc 0.9917 | Val Loss 0.5013 (CE 0.4322, Aux 0.0691) | Val Acc 0.9417 | NoImprove 1/20
-  Epoch 71/100 | LR 2.14e-05 | Train Loss 0.3712 (CE 0.2999, Aux 0.0713) | Train Acc 0.9875 | Val Loss 0.4810 (CE 0.4121, Aux 0.0689) | Val Acc 0.9417 | NoImprove 2/20
-  Epoch 72/100 | LR 2.02e-05 | Train Loss 0.3678 (CE 0.2967, Aux 0.0711) | Train Acc 0.9931 | Val Loss 0.5125 (CE 0.4438, Aux 0.0687) | Val Acc 0.9369 | NoImprove 3/20
-  Epoch 73/100 | LR 1.89e-05 | Train Loss 0.3657 (CE 0.2949, Aux 0.0708) | Train Acc 0.9903 | Val Loss 0.4700 (CE 0.4017, Aux 0.0683) | Val Acc 0.9369 | NoImprove 4/20
-  Epoch 74/100 | LR 1.78e-05 | Train Loss 0.3657 (CE 0.2950, Aux 0.0707) | Train Acc 0.9931 | Val Loss 0.4907 (CE 0.4224, Aux 0.0683) | Val Acc 0.9320 | NoImprove 5/20
-  Epoch 75/100 | LR 1.66e-05 | Train Loss 0.3673 (CE 0.2970, Aux 0.0703) | Train Acc 0.9917 | Val Loss 0.4692 (CE 0.4015, Aux 0.0678) | Val Acc 0.9417 | NoImprove 6/20
-  Epoch 76/100 | LR 1.55e-05 | Train Loss 0.3647 (CE 0.2947, Aux 0.0700) | Train Acc 0.9944 | Val Loss 0.5023 (CE 0.4346, Aux 0.0676) | Val Acc 0.9272 | NoImprove 7/20
-  Epoch 77/100 | LR 1.44e-05 | Train Loss 0.3610 (CE 0.2911, Aux 0.0699) | Train Acc 0.9917 | Val Loss 0.4994 (CE 0.4319, Aux 0.0675) | Val Acc 0.9320 | NoImprove 8/20
-  Epoch 78/100 | LR 1.34e-05 | Train Loss 0.3586 (CE 0.2888, Aux 0.0698) | Train Acc 0.9944 | Val Loss 0.4921 (CE 0.4247, Aux 0.0674) | Val Acc 0.9417 | NoImprove 9/20
-  Epoch 79/100 | LR 1.24e-05 | Train Loss 0.3562 (CE 0.2866, Aux 0.0696) | Train Acc 0.9944 | Val Loss 0.4627 (CE 0.3958, Aux 0.0669) | Val Acc 0.9417 | NoImprove 10/20
-  Epoch 80/100 | LR 1.14e-05 | Train Loss 0.3579 (CE 0.2886, Aux 0.0693) | Train Acc 0.9917 | Val Loss 0.4874 (CE 0.4205, Aux 0.0668) | Val Acc 0.9369 | NoImprove 11/20
-  Epoch 81/100 | LR 1.05e-05 | Train Loss 0.3567 (CE 0.2875, Aux 0.0693) | Train Acc 0.9958 | Val Loss 0.5086 (CE 0.4417, Aux 0.0669) | Val Acc 0.9369 | NoImprove 12/20
-  Epoch 82/100 | LR 9.56e-06 | Train Loss 0.3567 (CE 0.2877, Aux 0.0690) | Train Acc 0.9944 | Val Loss 0.4850 (CE 0.4184, Aux 0.0666) | Val Acc 0.9466 | NoImprove 13/20
-  Epoch 83/100 | LR 8.71e-06 | Train Loss 0.3575 (CE 0.2885, Aux 0.0691) | Train Acc 0.9944 | Val Loss 0.5335 (CE 0.4666, Aux 0.0669) | Val Acc 0.9223 | NoImprove 14/20
-  Epoch 84/100 | LR 7.89e-06 | Train Loss 0.3561 (CE 0.2872, Aux 0.0688) | Train Acc 0.9931 | Val Loss 0.4745 (CE 0.4081, Aux 0.0663) | Val Acc 0.9369 | NoImprove 15/20
-  Epoch 85/100 | LR 7.12e-06 | Train Loss 0.3563 (CE 0.2874, Aux 0.0689) | Train Acc 0.9944 | Val Loss 0.4711 (CE 0.4049, Aux 0.0662) | Val Acc 0.9515 | NoImprove 0/20
-  Epoch 86/100 | LR 6.40e-06 | Train Loss 0.3523 (CE 0.2836, Aux 0.0686) | Train Acc 0.9944 | Val Loss 0.4928 (CE 0.4263, Aux 0.0664) | Val Acc 0.9369 | NoImprove 1/20
-  Epoch 87/100 | LR 5.71e-06 | Train Loss 0.3502 (CE 0.2816, Aux 0.0686) | Train Acc 0.9944 | Val Loss 0.4741 (CE 0.4079, Aux 0.0662) | Val Acc 0.9320 | NoImprove 2/20
-  Epoch 88/100 | LR 5.07e-06 | Train Loss 0.3493 (CE 0.2809, Aux 0.0685) | Train Acc 0.9972 | Val Loss 0.4954 (CE 0.4293, Aux 0.0662) | Val Acc 0.9369 | NoImprove 3/20
-  Epoch 89/100 | LR 4.48e-06 | Train Loss 0.3488 (CE 0.2804, Aux 0.0684) | Train Acc 0.9972 | Val Loss 0.4672 (CE 0.4012, Aux 0.0660) | Val Acc 0.9466 | NoImprove 4/20
-  Epoch 90/100 | LR 3.93e-06 | Train Loss 0.3514 (CE 0.2830, Aux 0.0684) | Train Acc 0.9958 | Val Loss 0.4758 (CE 0.4098, Aux 0.0660) | Val Acc 0.9417 | NoImprove 5/20
-  Epoch 91/100 | LR 3.42e-06 | Train Loss 0.3471 (CE 0.2789, Aux 0.0682) | Train Acc 0.9972 | Val Loss 0.4934 (CE 0.4274, Aux 0.0660) | Val Acc 0.9320 | NoImprove 6/20
-  Epoch 92/100 | LR 2.97e-06 | Train Loss 0.3467 (CE 0.2783, Aux 0.0684) | Train Acc 0.9972 | Val Loss 0.4744 (CE 0.4086, Aux 0.0658) | Val Acc 0.9369 | NoImprove 7/20
-  Epoch 93/100 | LR 2.56e-06 | Train Loss 0.3498 (CE 0.2816, Aux 0.0682) | Train Acc 0.9958 | Val Loss 0.4887 (CE 0.4228, Aux 0.0659) | Val Acc 0.9369 | NoImprove 8/20
-  Epoch 94/100 | LR 2.19e-06 | Train Loss 0.3477 (CE 0.2795, Aux 0.0682) | Train Acc 0.9958 | Val Loss 0.4918 (CE 0.4259, Aux 0.0659) | Val Acc 0.9320 | NoImprove 9/20
-  Epoch 95/100 | LR 1.88e-06 | Train Loss 0.3489 (CE 0.2809, Aux 0.0680) | Train Acc 0.9972 | Val Loss 0.4816 (CE 0.4158, Aux 0.0658) | Val Acc 0.9369 | NoImprove 10/20
-  Epoch 96/100 | LR 1.61e-06 | Train Loss 0.3434 (CE 0.2753, Aux 0.0681) | Train Acc 0.9986 | Val Loss 0.4813 (CE 0.4157, Aux 0.0657) | Val Acc 0.9369 | NoImprove 11/20
-  Epoch 97/100 | LR 1.39e-06 | Train Loss 0.3453 (CE 0.2773, Aux 0.0680) | Train Acc 0.9944 | Val Loss 0.4885 (CE 0.4228, Aux 0.0657) | Val Acc 0.9369 | NoImprove 12/20
-  Epoch 98/100 | LR 1.22e-06 | Train Loss 0.3427 (CE 0.2748, Aux 0.0679) | Train Acc 0.9986 | Val Loss 0.4926 (CE 0.4269, Aux 0.0657) | Val Acc 0.9369 | NoImprove 13/20
-  Epoch 99/100 | LR 1.10e-06 | Train Loss 0.3494 (CE 0.2814, Aux 0.0680) | Train Acc 0.9944 | Val Loss 0.4860 (CE 0.4204, Aux 0.0656) | Val Acc 0.9369 | NoImprove 14/20
-  Epoch 100/100 | LR 1.02e-06 | Train Loss 0.3480 (CE 0.2800, Aux 0.0680) | Train Acc 0.9944 | Val Loss 0.4841 (CE 0.4185, Aux 0.0656) | Val Acc 0.9369 | NoImprove 15/20
-  Best model at epoch 85: Val Acc 0.9515, Val Loss 0.4711
-  Model saved to /root/多模态10/results/rp_resnet50_multiscale_cnn_spectral_residual_paper_spectral_only_feat512_fz2_id0p1_fd0p15_h256_iw0p05_saux0p05_snv_sgd1_linear_svm_spectral_sgd1_cosine_model.pth
-  Final residual image weight: 0.050000
-  LinearSVM_C0.03 CV f1_macro: 0.9816
-  LinearSVM_C0.05 CV f1_macro: 0.9783
-  LinearSVM_C0.1 CV f1_macro: 0.9773
-  LinearSVM_C0.2 CV f1_macro: 0.9773
-  LinearSVM_C0.5 CV f1_macro: 0.9773
-  LinearSVM_C1 CV f1_macro: 0.9761
-  LinearSVM_C2 CV f1_macro: 0.9761
-  LinearSVM_C3 CV f1_macro: 0.9761
-  LinearSVM_C5 CV f1_macro: 0.9826
-  LinearSVM_C10 CV f1_macro: 0.9837
-  Selected LinearSVM-C10 with CV f1_macro 0.9837
+  Scheduler: plateau | Best metric: val_acc_or_loss | Early stopping: True
+  Optimizer groups: wavelet=1.00e-04, spectral=1.00e-04, fusion_head=1.00e-04
+  Branch auxiliary loss | Image weight: 0.02 | Spectral weight: 0.00
+  Epoch 01/60 | LR 1.00e-04 | Train Loss 2.0083 (CE 1.9694, Aux 0.0389) | Train Acc 0.1639 | Val Loss 2.1217 (CE 2.0828, Aux 0.0390) | Val Acc 0.1408 | NoImprove 0/14
+  Epoch 02/60 | LR 1.00e-04 | Train Loss 1.7904 (CE 1.7515, Aux 0.0389) | Train Acc 0.3556 | Val Loss 2.3019 (CE 2.2629, Aux 0.0389) | Val Acc 0.1408 | NoImprove 0/14
+  Epoch 03/60 | LR 1.00e-04 | Train Loss 1.5829 (CE 1.5440, Aux 0.0390) | Train Acc 0.4361 | Val Loss 2.4111 (CE 2.3722, Aux 0.0389) | Val Acc 0.1408 | NoImprove 0/14
+  Epoch 04/60 | LR 1.00e-04 | Train Loss 1.3923 (CE 1.3534, Aux 0.0389) | Train Acc 0.5472 | Val Loss 2.6479 (CE 2.6090, Aux 0.0389) | Val Acc 0.1408 | NoImprove 0/14
+  Epoch 05/60 | LR 1.00e-04 | Train Loss 1.2428 (CE 1.2039, Aux 0.0389) | Train Acc 0.6069 | Val Loss 2.7330 (CE 2.6941, Aux 0.0389) | Val Acc 0.1408 | NoImprove 0/14
+  Epoch 06/60 | LR 1.00e-04 | Train Loss 1.1724 (CE 1.1335, Aux 0.0389) | Train Acc 0.6361 | Val Loss 2.6720 (CE 2.6331, Aux 0.0389) | Val Acc 0.1408 | NoImprove 0/14
+  Epoch 07/60 | LR 1.00e-04 | Train Loss 1.1028 (CE 1.0638, Aux 0.0389) | Train Acc 0.6833 | Val Loss 2.2988 (CE 2.2598, Aux 0.0389) | Val Acc 0.1553 | NoImprove 0/14
+  Epoch 08/60 | LR 1.00e-04 | Train Loss 1.0564 (CE 1.0175, Aux 0.0389) | Train Acc 0.7111 | Val Loss 1.5312 (CE 1.4923, Aux 0.0389) | Val Acc 0.4126 | NoImprove 0/14
+  Epoch 09/60 | LR 1.00e-04 | Train Loss 0.9942 (CE 0.9552, Aux 0.0389) | Train Acc 0.7417 | Val Loss 1.0142 (CE 0.9753, Aux 0.0389) | Val Acc 0.6748 | NoImprove 0/14
+  Epoch 10/60 | LR 1.00e-04 | Train Loss 0.9920 (CE 0.9531, Aux 0.0389) | Train Acc 0.7319 | Val Loss 1.0272 (CE 0.9883, Aux 0.0389) | Val Acc 0.6942 | NoImprove 0/14
+  Epoch 11/60 | LR 1.00e-04 | Train Loss 0.9211 (CE 0.8822, Aux 0.0389) | Train Acc 0.7583 | Val Loss 0.9123 (CE 0.8734, Aux 0.0389) | Val Acc 0.7184 | NoImprove 0/14
+  Epoch 12/60 | LR 1.00e-04 | Train Loss 0.8539 (CE 0.8150, Aux 0.0389) | Train Acc 0.7917 | Val Loss 0.8763 (CE 0.8374, Aux 0.0389) | Val Acc 0.7427 | NoImprove 0/14
+  Epoch 13/60 | LR 1.00e-04 | Train Loss 0.8187 (CE 0.7798, Aux 0.0389) | Train Acc 0.7917 | Val Loss 0.7995 (CE 0.7606, Aux 0.0389) | Val Acc 0.7767 | NoImprove 0/14
+  Epoch 14/60 | LR 1.00e-04 | Train Loss 0.7889 (CE 0.7500, Aux 0.0389) | Train Acc 0.8111 | Val Loss 0.8740 (CE 0.8351, Aux 0.0389) | Val Acc 0.7573 | NoImprove 1/14
+  Epoch 15/60 | LR 1.00e-04 | Train Loss 0.7739 (CE 0.7350, Aux 0.0389) | Train Acc 0.8236 | Val Loss 0.8100 (CE 0.7711, Aux 0.0389) | Val Acc 0.7573 | NoImprove 2/14
+  Epoch 16/60 | LR 1.00e-04 | Train Loss 0.7647 (CE 0.7257, Aux 0.0389) | Train Acc 0.8278 | Val Loss 0.7901 (CE 0.7512, Aux 0.0389) | Val Acc 0.7816 | NoImprove 0/14
+  Epoch 17/60 | LR 1.00e-04 | Train Loss 0.7093 (CE 0.6704, Aux 0.0389) | Train Acc 0.8389 | Val Loss 0.8639 (CE 0.8250, Aux 0.0389) | Val Acc 0.7136 | NoImprove 1/14
+  Epoch 18/60 | LR 1.00e-04 | Train Loss 0.7030 (CE 0.6641, Aux 0.0389) | Train Acc 0.8347 | Val Loss 0.6968 (CE 0.6579, Aux 0.0389) | Val Acc 0.8252 | NoImprove 0/14
+  Epoch 19/60 | LR 1.00e-04 | Train Loss 0.6707 (CE 0.6317, Aux 0.0389) | Train Acc 0.8611 | Val Loss 0.6502 (CE 0.6113, Aux 0.0389) | Val Acc 0.8447 | NoImprove 0/14
+  Epoch 20/60 | LR 1.00e-04 | Train Loss 0.6222 (CE 0.5833, Aux 0.0389) | Train Acc 0.8875 | Val Loss 0.6526 (CE 0.6137, Aux 0.0389) | Val Acc 0.8155 | NoImprove 1/14
+  Epoch 21/60 | LR 1.00e-04 | Train Loss 0.6236 (CE 0.5847, Aux 0.0389) | Train Acc 0.8764 | Val Loss 0.6775 (CE 0.6386, Aux 0.0389) | Val Acc 0.8495 | NoImprove 0/14
+  Epoch 22/60 | LR 1.00e-04 | Train Loss 0.6058 (CE 0.5669, Aux 0.0389) | Train Acc 0.8903 | Val Loss 0.6254 (CE 0.5865, Aux 0.0389) | Val Acc 0.8495 | NoImprove 0/14
+  Epoch 23/60 | LR 1.00e-04 | Train Loss 0.5917 (CE 0.5528, Aux 0.0389) | Train Acc 0.8889 | Val Loss 0.6643 (CE 0.6254, Aux 0.0389) | Val Acc 0.8592 | NoImprove 0/14
+  Epoch 24/60 | LR 1.00e-04 | Train Loss 0.6552 (CE 0.6163, Aux 0.0389) | Train Acc 0.8653 | Val Loss 0.7105 (CE 0.6716, Aux 0.0389) | Val Acc 0.8447 | NoImprove 1/14
+  Epoch 25/60 | LR 1.00e-04 | Train Loss 0.5745 (CE 0.5356, Aux 0.0389) | Train Acc 0.8944 | Val Loss 0.7226 (CE 0.6837, Aux 0.0389) | Val Acc 0.8107 | NoImprove 2/14
+  Epoch 26/60 | LR 1.00e-04 | Train Loss 0.5787 (CE 0.5399, Aux 0.0389) | Train Acc 0.8958 | Val Loss 0.5642 (CE 0.5253, Aux 0.0389) | Val Acc 0.8786 | NoImprove 0/14
+  Epoch 27/60 | LR 1.00e-04 | Train Loss 0.5244 (CE 0.4855, Aux 0.0389) | Train Acc 0.9250 | Val Loss 0.5702 (CE 0.5313, Aux 0.0389) | Val Acc 0.8689 | NoImprove 1/14
+  Epoch 28/60 | LR 1.00e-04 | Train Loss 0.5417 (CE 0.5028, Aux 0.0389) | Train Acc 0.9194 | Val Loss 0.4901 (CE 0.4512, Aux 0.0389) | Val Acc 0.9223 | NoImprove 0/14
+  Epoch 29/60 | LR 1.00e-04 | Train Loss 0.5020 (CE 0.4631, Aux 0.0389) | Train Acc 0.9333 | Val Loss 0.5455 (CE 0.5066, Aux 0.0389) | Val Acc 0.8883 | NoImprove 1/14
+  Epoch 30/60 | LR 1.00e-04 | Train Loss 0.5090 (CE 0.4701, Aux 0.0389) | Train Acc 0.9181 | Val Loss 0.6036 (CE 0.5648, Aux 0.0389) | Val Acc 0.8738 | NoImprove 2/14
+  Epoch 31/60 | LR 1.00e-04 | Train Loss 0.5018 (CE 0.4630, Aux 0.0389) | Train Acc 0.9208 | Val Loss 0.5625 (CE 0.5236, Aux 0.0389) | Val Acc 0.8786 | NoImprove 3/14
+  Epoch 32/60 | LR 1.00e-04 | Train Loss 0.5360 (CE 0.4972, Aux 0.0389) | Train Acc 0.9111 | Val Loss 0.5641 (CE 0.5253, Aux 0.0389) | Val Acc 0.8932 | NoImprove 4/14
+  Epoch 33/60 | LR 1.00e-04 | Train Loss 0.4865 (CE 0.4476, Aux 0.0389) | Train Acc 0.9181 | Val Loss 0.5231 (CE 0.4843, Aux 0.0389) | Val Acc 0.8932 | NoImprove 5/14
+  Epoch 34/60 | LR 1.00e-04 | Train Loss 0.4710 (CE 0.4321, Aux 0.0389) | Train Acc 0.9347 | Val Loss 0.4601 (CE 0.4212, Aux 0.0388) | Val Acc 0.9320 | NoImprove 0/14
+  Epoch 35/60 | LR 1.00e-04 | Train Loss 0.4893 (CE 0.4504, Aux 0.0389) | Train Acc 0.9264 | Val Loss 0.5983 (CE 0.5594, Aux 0.0388) | Val Acc 0.8835 | NoImprove 1/14
+  Epoch 36/60 | LR 1.00e-04 | Train Loss 0.4782 (CE 0.4394, Aux 0.0389) | Train Acc 0.9319 | Val Loss 0.5388 (CE 0.5000, Aux 0.0388) | Val Acc 0.9029 | NoImprove 2/14
+  Epoch 37/60 | LR 1.00e-04 | Train Loss 0.4844 (CE 0.4456, Aux 0.0389) | Train Acc 0.9347 | Val Loss 0.5437 (CE 0.5049, Aux 0.0388) | Val Acc 0.9078 | NoImprove 3/14
+  Epoch 38/60 | LR 1.00e-04 | Train Loss 0.4447 (CE 0.4058, Aux 0.0389) | Train Acc 0.9514 | Val Loss 0.6924 (CE 0.6536, Aux 0.0388) | Val Acc 0.8447 | NoImprove 4/14
+  Epoch 39/60 | LR 1.00e-04 | Train Loss 0.4485 (CE 0.4097, Aux 0.0389) | Train Acc 0.9542 | Val Loss 0.5985 (CE 0.5597, Aux 0.0388) | Val Acc 0.8641 | NoImprove 5/14
+  Epoch 40/60 | LR 1.00e-04 | Train Loss 0.4729 (CE 0.4340, Aux 0.0389) | Train Acc 0.9375 | Val Loss 0.5630 (CE 0.5242, Aux 0.0388) | Val Acc 0.8786 | NoImprove 6/14
+  Epoch 41/60 | LR 1.00e-04 | Train Loss 0.4815 (CE 0.4426, Aux 0.0389) | Train Acc 0.9278 | Val Loss 0.5634 (CE 0.5246, Aux 0.0388) | Val Acc 0.8786 | NoImprove 7/14
+  Epoch 42/60 | LR 1.00e-04 | Train Loss 0.4712 (CE 0.4324, Aux 0.0389) | Train Acc 0.9319 | Val Loss 0.5057 (CE 0.4668, Aux 0.0388) | Val Acc 0.8981 | NoImprove 8/14
+  Epoch 43/60 | LR 1.00e-04 | Train Loss 0.4316 (CE 0.3927, Aux 0.0389) | Train Acc 0.9542 | Val Loss 0.4683 (CE 0.4295, Aux 0.0388) | Val Acc 0.9175 | NoImprove 9/14
+  Epoch 44/60 | LR 5.00e-05 | Train Loss 0.3936 (CE 0.3547, Aux 0.0389) | Train Acc 0.9694 | Val Loss 0.4620 (CE 0.4231, Aux 0.0388) | Val Acc 0.9369 | NoImprove 0/14
+  Epoch 45/60 | LR 5.00e-05 | Train Loss 0.3830 (CE 0.3441, Aux 0.0389) | Train Acc 0.9722 | Val Loss 0.5024 (CE 0.4636, Aux 0.0388) | Val Acc 0.9272 | NoImprove 1/14
+  Epoch 46/60 | LR 5.00e-05 | Train Loss 0.3810 (CE 0.3421, Aux 0.0389) | Train Acc 0.9764 | Val Loss 0.4827 (CE 0.4439, Aux 0.0388) | Val Acc 0.9272 | NoImprove 2/14
+  Epoch 47/60 | LR 5.00e-05 | Train Loss 0.3647 (CE 0.3258, Aux 0.0388) | Train Acc 0.9847 | Val Loss 0.4569 (CE 0.4180, Aux 0.0388) | Val Acc 0.9369 | NoImprove 0/14
+  Epoch 48/60 | LR 5.00e-05 | Train Loss 0.3629 (CE 0.3241, Aux 0.0388) | Train Acc 0.9819 | Val Loss 0.4459 (CE 0.4071, Aux 0.0388) | Val Acc 0.9466 | NoImprove 0/14
+  Epoch 49/60 | LR 5.00e-05 | Train Loss 0.3581 (CE 0.3192, Aux 0.0388) | Train Acc 0.9833 | Val Loss 0.4884 (CE 0.4496, Aux 0.0388) | Val Acc 0.9320 | NoImprove 1/14
+  Epoch 50/60 | LR 5.00e-05 | Train Loss 0.3725 (CE 0.3336, Aux 0.0389) | Train Acc 0.9792 | Val Loss 0.5074 (CE 0.4686, Aux 0.0388) | Val Acc 0.9126 | NoImprove 2/14
+  Epoch 51/60 | LR 5.00e-05 | Train Loss 0.3507 (CE 0.3118, Aux 0.0388) | Train Acc 0.9847 | Val Loss 0.4371 (CE 0.3983, Aux 0.0388) | Val Acc 0.9417 | NoImprove 0/14
+  Epoch 52/60 | LR 5.00e-05 | Train Loss 0.3492 (CE 0.3103, Aux 0.0388) | Train Acc 0.9861 | Val Loss 0.4577 (CE 0.4190, Aux 0.0388) | Val Acc 0.9175 | NoImprove 1/14
+  Epoch 53/60 | LR 5.00e-05 | Train Loss 0.3431 (CE 0.3042, Aux 0.0388) | Train Acc 0.9944 | Val Loss 0.4448 (CE 0.4060, Aux 0.0388) | Val Acc 0.9466 | NoImprove 2/14
+  Epoch 54/60 | LR 5.00e-05 | Train Loss 0.3448 (CE 0.3059, Aux 0.0388) | Train Acc 0.9917 | Val Loss 0.4470 (CE 0.4082, Aux 0.0388) | Val Acc 0.9320 | NoImprove 3/14
+  Epoch 55/60 | LR 5.00e-05 | Train Loss 0.3424 (CE 0.3036, Aux 0.0388) | Train Acc 0.9875 | Val Loss 0.4321 (CE 0.3933, Aux 0.0388) | Val Acc 0.9320 | NoImprove 4/14
+  Epoch 56/60 | LR 5.00e-05 | Train Loss 0.3515 (CE 0.3127, Aux 0.0388) | Train Acc 0.9847 | Val Loss 0.4679 (CE 0.4291, Aux 0.0388) | Val Acc 0.9417 | NoImprove 5/14
+  Epoch 57/60 | LR 5.00e-05 | Train Loss 0.3546 (CE 0.3158, Aux 0.0388) | Train Acc 0.9861 | Val Loss 0.4618 (CE 0.4231, Aux 0.0388) | Val Acc 0.9563 | NoImprove 0/14
+  Epoch 58/60 | LR 5.00e-05 | Train Loss 0.3507 (CE 0.3119, Aux 0.0388) | Train Acc 0.9875 | Val Loss 0.4418 (CE 0.4030, Aux 0.0387) | Val Acc 0.9515 | NoImprove 1/14
+  Epoch 59/60 | LR 5.00e-05 | Train Loss 0.3348 (CE 0.2960, Aux 0.0388) | Train Acc 0.9931 | Val Loss 0.4551 (CE 0.4164, Aux 0.0387) | Val Acc 0.9369 | NoImprove 2/14
+  Epoch 60/60 | LR 5.00e-05 | Train Loss 0.3432 (CE 0.3044, Aux 0.0388) | Train Acc 0.9903 | Val Loss 0.5197 (CE 0.4810, Aux 0.0387) | Val Acc 0.9175 | NoImprove 3/14
+  Best model at epoch 57: Val Acc 0.9563, Val Loss 0.4618
+  Model saved to /root/多模态10/results/wavelet_db4_l3_attn_cnn_multiscale_cnn_spectral_residual_paper_wavelet_multiview_feat512_fz2_id0p1_fd0p15_h256_iw0p05_iaux0p02_snv_d1_sg_linear_svm_paper_repro_model.pth
+  Final residual image weight: 0.049087
+  LinearSVM_C0.03 CV f1_macro: 0.9881
+  LinearSVM_C0.05 CV f1_macro: 0.9881
+  LinearSVM_C0.1 CV f1_macro: 0.9881
+  LinearSVM_C0.2 CV f1_macro: 0.9859
+  LinearSVM_C0.5 CV f1_macro: 0.9838
+  LinearSVM_C1 CV f1_macro: 0.9838
+  LinearSVM_C2 CV f1_macro: 0.9849
+  Selected LinearSVM-C0.03 with CV f1_macro 0.9881
 
 ======================================================================
 Test results
 ======================================================================
-  Experiment: rp_resnet50_multiscale_cnn_spectral_residual_paper_spectral_only_feat512_fz2_id0p1_fd0p15_h256_iw0p05_saux0p05_snv_sgd1_linear_svm_spectral_sgd1_cosine
-  Classifier: LinearSVM-C10
+  Experiment: wavelet_db4_l3_attn_cnn_multiscale_cnn_spectral_residual_paper_wavelet_multiview_feat512_fz2_id0p1_fd0p15_h256_iw0p05_iaux0p02_snv_d1_sg_linear_svm_paper_repro
+  Classifier: LinearSVM-C0.03
   Accuracy: 96.1%
-  Precision: 96.2%
+  Precision: 96.3%
   Recall: 96.1%
-  F1-score: 96.0%
+  F1-score: 96.1%
   Confusion matrix:
 [[14  0  0  0  0  0  0]
- [ 1 12  0  1  0  0  0]
+ [ 1 13  0  0  0  0  0]
  [ 1  0 14  0  0  0  0]
  [ 0  0  0 15  0  0  0]
  [ 0  0  0  0 15  0  0]
  [ 0  1  0  0  0 14  0]
- [ 0  0  0  0  0  0 15]]
-(ai_clone) root@autodl-container-273f4aae49-ac74ccde:~/多模态10# 
+ [ 0  0  0  1  0  0 14]]

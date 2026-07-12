@@ -28,23 +28,33 @@ class MFFNINIRS(nn.Module):
         fusion_hidden_dim=None,
         fusion_initial_image_weight=0.05,
         modality_mode="multimodal",
+        wavelet_backbone="attn_cnn",
+        wavelet_in_channels=2,
     ):
         super().__init__()
         self.modality_mode = str(modality_mode).lower()
-        if self.modality_mode not in ("multimodal", "spectral_only", "image_only"):
+        if self.modality_mode not in ("multimodal", "wavelet_multiview", "spectral_only", "image_only"):
             raise ValueError(f"Unsupported modality mode: {modality_mode}")
         self.image_backbone_name = normalize_image_backbone_name(image_backbone)
         self.spectral_backbone_name = normalize_spectral_backbone_name(spectral_backbone)
         self.fusion_name = normalize_fusion_name(fusion_method)
 
-        self.image_branch = build_image_backbone(
+        if self.modality_mode == "wavelet_multiview":
+            self.image_branch = build_spectral_extractor_with_channels(
+                wavelet_backbone,
+                input_length=spectral_length,
+                output_dim=feature_dim,
+                in_channels=wavelet_in_channels,
+            )
+        else:
+            self.image_branch = build_image_backbone(
             self.image_backbone_name,
             output_dim=feature_dim,
             pretrained=image_pretrained,
             in_channels=image_in_channels,
             freeze_stages=freeze_image_backbone_stages,
             dropout=image_dropout,
-        ) if self.modality_mode != "spectral_only" else None
+            ) if self.modality_mode != "spectral_only" else None
         self.spectral_branch = build_spectral_extractor_with_channels(
             self.spectral_backbone_name,
             input_length=spectral_length,
@@ -58,7 +68,7 @@ class MFFNINIRS(nn.Module):
             hidden_dim=fusion_hidden_dim,
             initial_image_weight=fusion_initial_image_weight,
         )
-        self.fused_dim = feature_dim if self.modality_mode != "multimodal" else self.fusion.output_dim
+        self.fused_dim = feature_dim if self.modality_mode in ("spectral_only", "image_only") else self.fusion.output_dim
         bottleneck_dim = max(128, self.fused_dim // 2)
         self.fusion_norm = nn.LayerNorm(self.fused_dim)
         self.feature_head = nn.Sequential(
