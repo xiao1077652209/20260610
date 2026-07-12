@@ -37,20 +37,21 @@ EXPERIMENT_TAG = "paper_repro"
 ENCODING_CACHE_TAG = "paper_rp401"
 
 # Default model
-MODALITY_MODE = "spectral_only"    # multimodal / spectral_only / image_only
+MODALITY_MODE = "multimodal"      # multimodal / spectral_only / image_only
 ENCODING_METHOD = "rp"             # rp / gadf / gasf / mtf
 IMAGE_BACKBONE = "resnet50"        # resnet50 / mobilenet_v2 / alexnet / vgg16 / shufflenet_v2
 SPECTRAL_BACKBONE = "multiscale_cnn"  # multiscale_cnn / attn_cnn / cnn1d / lstm / bilstm
-FUSION_METHOD = "acgf"             # dwgff / concat / acgf
+FUSION_METHOD = "spectral_residual"  # spectral_residual / acgf / dwgff / concat
 FINAL_CLASSIFIER = "linear_svm"   # pso_svm / linear_svm / logreg / knn / rf / pls_da / fc
 IMAGE_PRETRAINED = True
 FREEZE_IMAGE_BACKBONE_STAGES = 2    # freeze slightly deeper visual stages to improve small-sample generalization
 IMAGE_DROPOUT = 0.10                # slightly stronger regularization for small-sample generalization
 APPLY_OVERSAMPLING = True
 FINAL_CLASSIFIER_TRAIN_SPLIT = "trainval"  # auto / train / trainval
-FINAL_CLASSIFIER_FEATURE_MODE = "hybrid"   # fused / all / hybrid / enhanced
+FINAL_CLASSIFIER_FEATURE_MODE = "fused"    # fused recommended for residual fusion
 FUSION_DROPOUT = 0.15
 FUSION_HIDDEN_DIM = 256             # used by ACGF lightweight gated fusion
+FUSION_INITIAL_IMAGE_WEIGHT = 0.05   # start close to the strong spectral-only model
 USE_CENTER_LOSS = False             # keep disabled on the mainline: current server result shows it hurts PSO-SVM test accuracy
 CENTER_LOSS_WEIGHT = 0.03
 CENTER_LOSS_LR = 1e-3
@@ -59,8 +60,8 @@ CENTER_LOSS_NORMALIZE = True
 USE_BRANCH_AUX_LOSS = True
 USE_MODAL_ALIGN_LOSS = False
 MODAL_ALIGN_LOSS_WEIGHT = 0.01
-IMAGE_AUX_LOSS_WEIGHT = 0.05
-SPECTRAL_AUX_LOSS_WEIGHT = 0.10
+IMAGE_AUX_LOSS_WEIGHT = 0.02
+SPECTRAL_AUX_LOSS_WEIGHT = 0.05
 
 # Reproduction suites
 RUN_PAPER_BENCHMARKS = False
@@ -128,7 +129,7 @@ PSO_N_JOBS = -1
 LINEAR_SVM_C = [0.03, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0]
 #LINEAR_SVM_C = [0.1, 0.3, 0.5, 1.0, 2.0, 5.0, 10.0]
 LOGREG_C = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
-CLASSIFIER_USE_FEATURE_SELECTION = True
+CLASSIFIER_USE_FEATURE_SELECTION = False
 CLASSIFIER_MAX_FEATURES = 512
 
 KNN_NEIGHBORS = [3, 5, 7, 10, 12]

@@ -211,6 +211,8 @@ def validate_config():
         raise ValueError("IMAGE_DROPOUT must be in [0.0, 1.0).")
     if getattr(cfg, "FUSION_HIDDEN_DIM", 1) < 1:
         raise ValueError("FUSION_HIDDEN_DIM must be >= 1.")
+    if not 0.0 < float(getattr(cfg, "FUSION_INITIAL_IMAGE_WEIGHT", 0.05)) < 1.0:
+        raise ValueError("FUSION_INITIAL_IMAGE_WEIGHT must be between 0 and 1.")
     if getattr(cfg, "FUSION_DROPOUT", 0.0) < 0.0 or getattr(cfg, "FUSION_DROPOUT", 0.0) >= 1.0:
         raise ValueError("FUSION_DROPOUT must be in [0.0, 1.0).")
     if getattr(cfg, "IMAGE_AUX_LOSS_WEIGHT", 0.0) < 0.0:
@@ -1330,8 +1332,10 @@ def build_experiment_name(encoding_method, image_backbone, spectral_backbone, fu
     fusion_dropout = float(getattr(cfg, "FUSION_DROPOUT", 0.0))
     if fusion_dropout > 0.0:
         parts.append(f"fd{_format_float_token(fusion_dropout)}")
-    if normalize_fusion_name(fusion_method) == "acgf":
+    if normalize_fusion_name(fusion_method) in {"acgf", "spectral_residual"}:
         parts.append(f"h{int(getattr(cfg, 'FUSION_HIDDEN_DIM', 0))}")
+    if normalize_fusion_name(fusion_method) == "spectral_residual":
+        parts.append(f"iw{_format_float_token(getattr(cfg, 'FUSION_INITIAL_IMAGE_WEIGHT', 0.05))}")
     if center_loss_enabled():
         center_token = f"cl{_format_float_token(cfg.CENTER_LOSS_WEIGHT)}"
         if getattr(cfg, "CENTER_LOSS_NORMALIZE", True):
@@ -1388,6 +1392,7 @@ def train_and_evaluate_model(encoding_method, image_backbone, spectral_backbone,
         image_dropout=float(getattr(cfg, "IMAGE_DROPOUT", 0.0)),
         fusion_dropout=getattr(cfg, "FUSION_DROPOUT", 0.0),
         fusion_hidden_dim=getattr(cfg, "FUSION_HIDDEN_DIM", None),
+        fusion_initial_image_weight=getattr(cfg, "FUSION_INITIAL_IMAGE_WEIGHT", 0.05),
         modality_mode=getattr(cfg, "MODALITY_MODE", "multimodal"),
     ).to(device)
 

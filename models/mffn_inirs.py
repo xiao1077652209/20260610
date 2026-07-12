@@ -26,6 +26,7 @@ class MFFNINIRS(nn.Module):
         image_dropout=0.0,
         fusion_dropout=0.0,
         fusion_hidden_dim=None,
+        fusion_initial_image_weight=0.05,
         modality_mode="multimodal",
     ):
         super().__init__()
@@ -55,6 +56,7 @@ class MFFNINIRS(nn.Module):
             feature_dim=feature_dim,
             dropout=fusion_dropout,
             hidden_dim=fusion_hidden_dim,
+            initial_image_weight=fusion_initial_image_weight,
         )
         self.fused_dim = feature_dim if self.modality_mode != "multimodal" else self.fusion.output_dim
         bottleneck_dim = max(128, self.fused_dim // 2)
