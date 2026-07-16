@@ -115,7 +115,7 @@ class AttentionCNN1D(nn.Module):
     """
     def __init__(self, input_length, output_dim=1024, in_channels=1):
         super().__init__()
-        del input_length
+        # input_length is unused — model supports variable-length input
         self.blocks = nn.Sequential(
             _attention_conv_block(in_channels, 128, kernel_size=7, channel_att_strength=0.5, dropout=0.10),
             _attention_conv_block(128, 256, kernel_size=5, channel_att_strength=1.0, dropout=0.15),
@@ -166,7 +166,7 @@ class MultiScaleSpectralCNN(nn.Module):
     """Peak-preserving NIR encoder inspired by the reference end-to-end branch."""
     def __init__(self, input_length, output_dim=1024, in_channels=1):
         super().__init__()
-        del input_length
+        # input_length is unused — model supports variable-length input
         branch_channels = 48
         self.multiscale_stem = nn.ModuleList([
             nn.Sequential(

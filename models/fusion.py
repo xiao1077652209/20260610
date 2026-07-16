@@ -152,15 +152,15 @@ class AdaptiveChannelGatedFusion(nn.Module):
 
 
 class SpectralResidualFusion(nn.Module):
-    """Preserve the strong spectral representation and add a gated image residual."""
-    def __init__(self, feature_dim=1024, hidden_dim=256, dropout=0.0, initial_image_weight=0.05):
+    """Preserve the spectral representation and add a gated secondary-view residual."""
+    def __init__(self, feature_dim=1024, hidden_dim=256, dropout=0.0, initial_secondary_weight=0.05):
         super().__init__()
         if hidden_dim < 1:
             raise ValueError(f"hidden_dim must be >= 1, got {hidden_dim}")
-        if not 0.0 < initial_image_weight < 1.0:
-            raise ValueError("initial_image_weight must be between 0 and 1.")
+        if not 0.0 < initial_secondary_weight < 1.0:
+            raise ValueError("initial_secondary_weight must be between 0 and 1.")
         self.output_dim = feature_dim
-        self.image_adapter = nn.Sequential(
+        self.secondary_adapter = nn.Sequential(
             nn.Linear(feature_dim, hidden_dim, bias=False),
             nn.LayerNorm(hidden_dim),
             nn.GELU(),
@@ -176,18 +176,22 @@ class SpectralResidualFusion(nn.Module):
             nn.Linear(gate_hidden, feature_dim),
             nn.Sigmoid(),
         )
-        initial_logit = torch.logit(torch.tensor(float(initial_image_weight)))
-        self.image_scale_logit = nn.Parameter(initial_logit)
+        initial_logit = torch.logit(torch.tensor(float(initial_secondary_weight)))
+        self.secondary_scale_logit = nn.Parameter(initial_logit)
 
-    def forward(self, xm, xv):
-        image_delta = self.image_adapter(xm)
-        gate_input = torch.cat([xm, xv, torch.abs(xm - xv)], dim=1)
-        gated_delta = self.gate(gate_input) * image_delta
-        image_scale = torch.sigmoid(self.image_scale_logit)
-        return xv + image_scale * gated_delta
+    def forward(self, secondary_features, spectral_features):
+        secondary_delta = self.secondary_adapter(secondary_features)
+        gate_input = torch.cat([
+            secondary_features,
+            spectral_features,
+            torch.abs(secondary_features - spectral_features),
+        ], dim=1)
+        gated_delta = self.gate(gate_input) * secondary_delta
+        secondary_scale = torch.sigmoid(self.secondary_scale_logit)
+        return spectral_features + secondary_scale * gated_delta
 
 
-def build_fusion(name="dwgff", feature_dim=1024, dropout=0.0, hidden_dim=None, initial_image_weight=0.05):
+def build_fusion(name="dwgff", feature_dim=1024, dropout=0.0, hidden_dim=None, initial_secondary_weight=0.05):
     name = normalize_fusion_name(name)
     if name == "dwgff":
         return DWGFF(feature_dim=feature_dim, dropout=dropout)
@@ -208,6 +212,6 @@ def build_fusion(name="dwgff", feature_dim=1024, dropout=0.0, hidden_dim=None, i
             feature_dim=feature_dim,
             hidden_dim=hidden_dim,
             dropout=dropout,
-            initial_image_weight=initial_image_weight,
+            initial_secondary_weight=initial_secondary_weight,
         )
     raise ValueError(f"Unsupported fusion method: {name}")

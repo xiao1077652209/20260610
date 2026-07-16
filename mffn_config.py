@@ -11,28 +11,136 @@ RESULTS_DIR = os.path.join(BASE_DIR, "results")
 ENCODING_ROOT = os.path.join(BASE_DIR, "encodings")
 
 
-#DATA_PATH = os.path.join(DATASET_DIR, "diesel_spec_with_label.csv")
-DATA_PATH = os.path.join(DATASET_DIR, "20251203_535_产地_7.csv")
+# ============================================================
+# 数据集选择（只需改这一行）
+# ============================================================
+DATASET_NAME = "品种"  # 可选: 品种 / 产地 / Apple / Coffee / Mango / Diesel
+
+
+# ============================================================
+# 数据集注册表（每个数据集的专属配置）
+# 模型支持变长输入，target_length 建议保留原始波段数
+#
+# 协议选择建议：
+#   paper:  小样本 + 不均衡 → 先过采样再划分（与论文一致）
+#   strict: 样本均衡或量大 → 先划分再仅对训练集过采样（更严谨）
+#
+# 大数据集建议：
+#   large_data_mode=True 时，会自动跳过过采样、使用 strict 协议、
+#   增大 batch_size、增加 epoch、使用更大特征维度
+# ============================================================
+DATASET_CONFIGS = {
+    "品种": {
+        "path": "20260109_286_品种_8.csv",
+        "target_length": None,
+        "oversampling": True,
+        "strategy": "max",
+        "protocol": "strict",
+        # 大数据模式（默认关闭）
+        "large_data_mode": False,
+        "feature_dim": 256,
+        "batch_size": 64,
+        "epochs": 60,
+    },
+    "产地": {
+        "path": "20251203_535_产地_7.csv",
+        "target_length": None,
+        "oversampling": True,
+        "strategy": "max",
+        "protocol": "strict",
+        "large_data_mode": False,
+        "feature_dim": 256,
+        "batch_size": 64,
+        "epochs": 60,
+    },
+    "Apple": {
+        "path": "apple.csv",
+        "target_length": 2151,
+        "oversampling": False,
+        "strategy": "max",
+        "protocol": "strict",
+        # Apple 数据集样本量较大且均衡，建议使用大数据模式
+        "large_data_mode": True,
+        "feature_dim": 1024,
+        "batch_size": 128,
+        "epochs": 100,
+    },
+    "Coffee": {
+        "path": "coffee.csv",
+        "target_length": 286,
+        "oversampling": False,
+        "strategy": "max",
+        "protocol": "strict",
+        # Coffee 数据集样本量较大且均衡，建议使用大数据模式
+        "large_data_mode": True,
+        "feature_dim": 1024,
+        "batch_size": 128,
+        "epochs": 100,
+    },
+    "Mango": {
+        "path": "Mango.csv",
+        "target_length": 281,
+        "oversampling": True,
+        "strategy": "median",
+        "protocol": "strict",
+        "large_data_mode": False,
+        "feature_dim": 256,
+        "batch_size": 64,
+        "epochs": 60,
+    },
+    "Diesel": {
+        "path": "diesel_spec_with_label.csv",
+        "target_length": 401,
+        "oversampling": True,
+        "strategy": "max",
+        "protocol": "strict",
+        "large_data_mode": False,
+        "feature_dim": 256,
+        "batch_size": 64,
+        "epochs": 60,
+    },
+}
+
+# 自动应用所选数据集的配置
+_selected = DATASET_CONFIGS[DATASET_NAME]
+DATA_PATH = os.path.join(DATASET_DIR, _selected["path"])
+SPECTRAL_TARGET_LENGTH = _selected["target_length"]
+ENCODING_TARGET_LENGTH = _selected["target_length"]
+APPLY_OVERSAMPLING = _selected["oversampling"]
+OVERSAMPLING_STRATEGY = _selected["strategy"]
+EVALUATION_PROTOCOL = _selected["protocol"]
+
+# ---- 大数据模式配置 ----
+# 当 large_data_mode=True 时，以下配置会被覆盖
+LARGE_DATA_MODE = _selected.get("large_data_mode", False)
+if LARGE_DATA_MODE:
+    # 大数据模式下自动调整配置
+    APPLY_OVERSAMPLING = False          # 大数据集通常不需要过采样
+    EVALUATION_PROTOCOL = "strict"      # 大数据集使用 strict 协议更严谨
+    FEATURE_DIM = _selected.get("feature_dim", 1024)
+    BATCH_SIZE = _selected.get("batch_size", 128)
+    EPOCHS = _selected.get("epochs", 100)
+else:
+    FEATURE_DIM = _selected.get("feature_dim", 512)
+    BATCH_SIZE = _selected.get("batch_size", 64)
+    EPOCHS = _selected.get("epochs", 60)
+
+
 #TRAIN_DATA_PATH = os.path.join(DATASET_DIR, "20251203_535_产地_7_TRAIN.csv")
 #TEST_DATA_PATH = os.path.join(DATASET_DIR, "20251203_535_产地_7_TEST.csv")
 CSV_HAS_HEADER = "auto"  # auto / True / False
 
 # Paper alignment
 STRICT_PAPER_DATASET = False
-PAPER_EXPECTED_NUM_CLASSES = 5
+PAPER_EXPECTED_NUM_CLASSES = None    # None: accept the class count of the selected dataset
 PAPER_EXPECTED_SPECTRAL_LENGTH = 778
-SPECTRAL_TARGET_LENGTH = 778
-ENCODING_TARGET_LENGTH = 778
 
 #PAPER_EXPECTED_SPECTRAL_LENGTH = 401
-#SPECTRAL_TARGET_LENGTH = 401
-#ENCODING_TARGET_LENGTH = 401
 SPECTRAL_PREPROCESSING_METHOD = "snv+d1+sg"  # follows the reference NIR branch order
 SPECTRAL_PREPROCESSING_METHODS = [
     "msc+sg+d1",
     "snv+sg+d1",
 ]
-EVALUATION_PROTOCOL = "paper"      # paper: oversample before split; strict: split before oversampling train only
 EXPERIMENT_TAG = "paper_repro"
 ENCODING_CACHE_TAG = "paper_rp401"
 
@@ -45,33 +153,33 @@ FUSION_METHOD = "spectral_residual"  # spectral_residual / acgf / dwgff / concat
 FINAL_CLASSIFIER = "linear_svm"   # pso_svm / linear_svm / logreg / knn / rf / pls_da / fc
 IMAGE_PRETRAINED = False            # wavelet_multiview never uses image pretrained weights
 FREEZE_IMAGE_BACKBONE_STAGES = 2    # freeze slightly deeper visual stages to improve small-sample generalization
-IMAGE_DROPOUT = 0.10                # slightly stronger regularization for small-sample generalization
-APPLY_OVERSAMPLING = True
+IMAGE_DROPOUT = 0.10                # used only by the real image branch
 FINAL_CLASSIFIER_TRAIN_SPLIT = "trainval"  # auto / train / trainval
 FINAL_CLASSIFIER_FEATURE_MODE = "fused"    # fused recommended for residual fusion
-FUSION_DROPOUT = 0.15
+FUSION_DROPOUT = 0.10
 FUSION_HIDDEN_DIM = 256             # used by ACGF lightweight gated fusion
-FUSION_INITIAL_IMAGE_WEIGHT = 0.05   # start close to the strong spectral-only model
+FUSION_INITIAL_SECONDARY_WEIGHT = 0.10  # image or wavelet residual starts close to spectral-only
 LOAD_SPECTRAL_PRETRAINED = False    # train both spectral views from scratch
 SPECTRAL_PRETRAINED_PATH = ""       # empty: auto-discover the matching spectral-only model in RESULTS_DIR
 FREEZE_SPECTRAL_BACKBONE = False
 SPECTRAL_BACKBONE_LR = 1e-4
-IMAGE_BACKBONE_LR = 1e-4            # compatibility name: wavelet branch LR in wavelet_multiview
+IMAGE_BACKBONE_LR = 1e-4            # used only by the real image branch
 FUSION_HEAD_LR = 1e-4
 WAVELET_BACKBONE = "attn_cnn"
 WAVELET_NAME = "db4"
 WAVELET_LEVEL = 3
-WAVELET_INCLUDE_DENOISED = False     # False: A3 + mid-details; True adds denoised reconstruction
+WAVELET_INCLUDE_DENOISED = True      # True: A3 + mid-details + denoised reconstruction (3 channels)
 WAVELET_BACKBONE_LR = 1e-4
+WAVELET_AUX_LOSS_WEIGHT = 0.15
 USE_CENTER_LOSS = False             # keep disabled on the mainline: current server result shows it hurts PSO-SVM test accuracy
 CENTER_LOSS_WEIGHT = 0.03
 CENTER_LOSS_LR = 1e-3
 CENTER_LOSS_START_EPOCH = 4
 CENTER_LOSS_NORMALIZE = True
 USE_BRANCH_AUX_LOSS = True
-USE_MODAL_ALIGN_LOSS = False
-MODAL_ALIGN_LOSS_WEIGHT = 0.01
-IMAGE_AUX_LOSS_WEIGHT = 0.02         # compatibility name: wavelet auxiliary loss weight
+# USE_MODAL_ALIGN_LOSS = False       # 未实现，暂保留
+# MODAL_ALIGN_LOSS_WEIGHT = 0.01     # 未实现，暂保留
+IMAGE_AUX_LOSS_WEIGHT = 0.02         # used only by the real image branch
 SPECTRAL_AUX_LOSS_WEIGHT = 0.00
 
 # Reproduction suites
@@ -106,10 +214,11 @@ TEST_RATIO = 0.1
 RANDOM_SEED = 42
 NUM_WORKERS = 4
 PIN_MEMORY = True
-BATCH_SIZE = 64
-EPOCHS = 60
+# BATCH_SIZE 和 EPOCHS 已由大数据模式动态设置
+# BATCH_SIZE = 64
+# EPOCHS = 60
 LEARNING_RATE = 1e-4
-WEIGHT_DECAY = 1e-4
+WEIGHT_DECAY = 3e-4
 STEP_LR_STEP_SIZE = 5
 STEP_LR_GAMMA = 0.1
 LR_SCHEDULER = "plateau"           # step / plateau / cosine / none
@@ -117,14 +226,15 @@ PLATEAU_LR_FACTOR = 0.5
 PLATEAU_LR_PATIENCE = 8
 MIN_LR = 1e-6
 EARLY_STOPPING_ENABLED = True
-EARLY_STOPPING_PATIENCE = 14
+EARLY_STOPPING_PATIENCE = 10
 MIN_EPOCHS = 12
 EARLY_STOPPING_MIN_DELTA = 1e-4
 BEST_MODEL_METRIC = "val_acc_or_loss"  # val_acc / val_loss / val_acc_or_loss
 VAL_LOSS_ACC_TOLERANCE = 0.01
 MAX_GRAD_NORM = 1.0
 LABEL_SMOOTHING = 0.05
-FEATURE_DIM = 512
+# FEATURE_DIM 已由大数据模式动态设置
+# FEATURE_DIM = 512
 IMAGE_SIZE = 224
 
 # Final classifiers
@@ -138,7 +248,7 @@ CLASSIFIER_CV_SCORING = "f1_macro"  # accuracy / balanced_accuracy / f1_macro
 PSO_SCORING = CLASSIFIER_CV_SCORING
 PSO_N_JOBS = -1
 LINEAR_SVM_C = [0.03, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0]
-#LINEAR_SVM_C = [0.1, 0.3, 0.5, 1.0, 2.0, 5.0, 10.0]
+#LINEAR_SVM_C = [0.1, 0.3, 0.5, 1.0, 2.0, 5.0, 7.0, 10.0]
 LOGREG_C = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
 CLASSIFIER_USE_FEATURE_SELECTION = False
 CLASSIFIER_MAX_FEATURES = 512
