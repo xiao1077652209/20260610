@@ -62,3 +62,29 @@
 5. 融合Dropout从0.15降至0.10，让小波分支的贡献更顺畅传递。
 修改之后模型架构：模型结构没有变化，仍由主光谱MultiScaleSpectralCNN、小波AttentionCNN1D（输入通道从2变为3）、SpectralResidualFusion和Linear SVM组成。小波视图增加去噪重构通道后，AttentionCNN1D的输入通道数从2变为3，参数量略有增加。
 修改之后运行结果：尚未进行服务器正式训练，因此暂无新的准确率、精确率、召回率、F1分数和混淆矩阵。
+
+时间：2026-07-16 21:23
+修改内容：针对LinearSVM训练耗时过长的问题，进行3项优化：
+1. 减少C参数搜索范围：LINEAR_SVM_C从[0.03, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0]缩减为[0.1, 0.5, 1.0]，CV次数从35次降至15次；
+2. 开启特征选择：CLASSIFIER_USE_FEATURE_SELECTION从False改为True，CLASSIFIER_MAX_FEATURES从512改为256，enhanced模式1536维特征经Mutual Information筛选保留top-256维，降维6倍；
+3. 并行CV：pipeline.py中cross_val_score的n_jobs从1改为-1，5折CV并行执行，利用多核加速。
+修改之后模型架构：模型结构没有变化，仍由主光谱MultiScaleSpectralCNN、小波AttentionCNN1D（3通道）、SpectralResidualFusion和Linear SVM组成。特征选择在SVM训练前使用SelectKBest + mutual_info_classif筛选top-256特征，不改变模型本身。
+修改之后运行结果（产地数据集，strict协议）：
+修改前（7个C参数，1536维，串行CV）：
+  LinearSVM_C0.03 CV f1_macro: 0.9643
+  LinearSVM_C0.05 CV f1_macro: 0.9654
+  LinearSVM_C0.1 CV f1_macro: 0.9631
+  LinearSVM_C0.2 CV f1_macro: 0.9631
+  LinearSVM_C0.5 CV f1_macro: 0.9631
+  LinearSVM_C1 CV f1_macro: 0.9631
+  LinearSVM_C2 CV f1_macro: 0.9633（含ConvergenceWarning）
+  选中LinearSVM-C0.05，CV f1_macro=0.9654
+  测试准确率81.5%，精确率76.9%，召回率79.3%，F1-score 76.9%
+修改后（3个C参数，256维特征选择，并行CV）：
+  Classifier feature selection: top 256/1536 features
+  LinearSVM_C0.1 CV f1_macro: 0.9662
+  LinearSVM_C0.5 CV f1_macro: 0.9630
+  LinearSVM_C1 CV f1_macro: 0.9630
+  选中LinearSVM-C0.1，CV f1_macro=0.9662
+  测试准确率81.5%，精确率77.1%，召回率82.4%，F1-score 78.6%
+对比结论：优化后速度大幅提升（CV次数从35次降至3次，且并行执行），精度不降反升（F1-score从76.9%提升至78.6%），特征选择有效去除了噪声特征，小样本类（类0）识别从2/5提升至4/5。

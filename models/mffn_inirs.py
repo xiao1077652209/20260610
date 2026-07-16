@@ -80,8 +80,21 @@ class MFFNINIRS(nn.Module):
         )
         self.embedding_dim = bottleneck_dim
         self.classifier = nn.Linear(self.embedding_dim, num_classes)
-        self.secondary_aux_classifier = nn.Linear(feature_dim, num_classes)
-        self.spectral_aux_classifier = nn.Linear(feature_dim, num_classes)
+        # 增强辅助分类头：从单层 Linear 改为两层 MLP，提高判别能力
+        self.secondary_aux_classifier = nn.Sequential(
+            nn.Linear(feature_dim, max(64, feature_dim // 4)),
+            nn.LayerNorm(max(64, feature_dim // 4)),
+            nn.GELU(),
+            nn.Dropout(0.15),
+            nn.Linear(max(64, feature_dim // 4), num_classes),
+        )
+        self.spectral_aux_classifier = nn.Sequential(
+            nn.Linear(feature_dim, max(64, feature_dim // 4)),
+            nn.LayerNorm(max(64, feature_dim // 4)),
+            nn.GELU(),
+            nn.Dropout(0.15),
+            nn.Linear(max(64, feature_dim // 4), num_classes),
+        )
 
     def _encode_modalities(self, secondary_input, spectral_input):
         secondary = None if self.secondary_branch is None else F.normalize(

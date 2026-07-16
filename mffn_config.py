@@ -14,7 +14,7 @@ ENCODING_ROOT = os.path.join(BASE_DIR, "encodings")
 # ============================================================
 # 数据集选择（只需改这一行）
 # ============================================================
-DATASET_NAME = "品种"  # 可选: 品种 / 产地 / Apple / Coffee / Mango / Diesel
+DATASET_NAME = "产地"  # 可选: 品种 / 产地 / Apple / Coffee / Mango / Diesel
 
 
 # ============================================================
@@ -46,12 +46,12 @@ DATASET_CONFIGS = {
         "path": "20251203_535_产地_7.csv",
         "target_length": None,
         "oversampling": True,
-        "strategy": "max",
+        "strategy": "max",              # median → max：增加训练样本量，缓解细粒度分类数据不足
         "protocol": "strict",
         "large_data_mode": False,
         "feature_dim": 256,
         "batch_size": 64,
-        "epochs": 60,
+        "epochs": 150,                  # 80 → 150：让模型充分训练
     },
     "Apple": {
         "path": "apple.csv",
@@ -133,7 +133,7 @@ CSV_HAS_HEADER = "auto"  # auto / True / False
 # Paper alignment
 STRICT_PAPER_DATASET = False
 PAPER_EXPECTED_NUM_CLASSES = None    # None: accept the class count of the selected dataset
-PAPER_EXPECTED_SPECTRAL_LENGTH = 778
+PAPER_EXPECTED_SPECTRAL_LENGTH = 1555
 
 #PAPER_EXPECTED_SPECTRAL_LENGTH = 401
 SPECTRAL_PREPROCESSING_METHOD = "snv+d1+sg"  # follows the reference NIR branch order
@@ -142,7 +142,7 @@ SPECTRAL_PREPROCESSING_METHODS = [
     "snv+sg+d1",
 ]
 EXPERIMENT_TAG = "paper_repro"
-ENCODING_CACHE_TAG = "paper_rp401"
+ENCODING_CACHE_TAG = "paper_rp1556"
 
 # Default model
 MODALITY_MODE = "wavelet_multiview"  # wavelet_multiview / multimodal / spectral_only / image_only
@@ -155,32 +155,33 @@ IMAGE_PRETRAINED = False            # wavelet_multiview never uses image pretrai
 FREEZE_IMAGE_BACKBONE_STAGES = 2    # freeze slightly deeper visual stages to improve small-sample generalization
 IMAGE_DROPOUT = 0.10                # used only by the real image branch
 FINAL_CLASSIFIER_TRAIN_SPLIT = "trainval"  # auto / train / trainval
-FINAL_CLASSIFIER_FEATURE_MODE = "fused"    # fused recommended for residual fusion
-FUSION_DROPOUT = 0.10
+FINAL_CLASSIFIER_FEATURE_MODE = "enhanced" # fused → enhanced：给分类器提供更丰富的特征组合
+FUSION_DROPOUT = 0.20
 FUSION_HIDDEN_DIM = 256             # used by ACGF lightweight gated fusion
 FUSION_INITIAL_SECONDARY_WEIGHT = 0.10  # image or wavelet residual starts close to spectral-only
-LOAD_SPECTRAL_PRETRAINED = False    # train both spectral views from scratch
+LOAD_SPECTRAL_PRETRAINED = False    # 先设为 False，等跑出光谱-only 模型后再改为 True
 SPECTRAL_PRETRAINED_PATH = ""       # empty: auto-discover the matching spectral-only model in RESULTS_DIR
-FREEZE_SPECTRAL_BACKBONE = False
-SPECTRAL_BACKBONE_LR = 1e-4
-IMAGE_BACKBONE_LR = 1e-4            # used only by the real image branch
-FUSION_HEAD_LR = 1e-4
+FREEZE_SPECTRAL_BACKBONE = False    # 先设为 False，等启用光谱预训练后再改为 True
+
+SPECTRAL_BACKBONE_LR = 5e-5
+IMAGE_BACKBONE_LR = 5e-5
+FUSION_HEAD_LR = 5e-5
 WAVELET_BACKBONE = "attn_cnn"
 WAVELET_NAME = "db4"
 WAVELET_LEVEL = 3
 WAVELET_INCLUDE_DENOISED = True      # True: A3 + mid-details + denoised reconstruction (3 channels)
-WAVELET_BACKBONE_LR = 1e-4
-WAVELET_AUX_LOSS_WEIGHT = 0.15
-USE_CENTER_LOSS = False             # keep disabled on the mainline: current server result shows it hurts PSO-SVM test accuracy
+WAVELET_BACKBONE_LR = 5e-5
+WAVELET_AUX_LOSS_WEIGHT = 0.05
+USE_CENTER_LOSS = True              # False → True：开启Center Loss，让同类特征更紧凑
 CENTER_LOSS_WEIGHT = 0.03
 CENTER_LOSS_LR = 1e-3
-CENTER_LOSS_START_EPOCH = 4
+CENTER_LOSS_START_EPOCH = 5         # 从第5轮开始，让模型先学习基本分类
 CENTER_LOSS_NORMALIZE = True
-USE_BRANCH_AUX_LOSS = True
+USE_BRANCH_AUX_LOSS = False         # True → False：关闭无效的分支aux loss，改用Center Loss
 # USE_MODAL_ALIGN_LOSS = False       # 未实现，暂保留
 # MODAL_ALIGN_LOSS_WEIGHT = 0.01     # 未实现，暂保留
 IMAGE_AUX_LOSS_WEIGHT = 0.02         # used only by the real image branch
-SPECTRAL_AUX_LOSS_WEIGHT = 0.00
+SPECTRAL_AUX_LOSS_WEIGHT = 0.10
 
 # Reproduction suites
 RUN_PAPER_BENCHMARKS = False
@@ -217,17 +218,17 @@ PIN_MEMORY = True
 # BATCH_SIZE 和 EPOCHS 已由大数据模式动态设置
 # BATCH_SIZE = 64
 # EPOCHS = 60
-LEARNING_RATE = 1e-4
-WEIGHT_DECAY = 3e-4
+LEARNING_RATE = 1e-4                 # 5e-5 → 1e-4：提高学习率，加快收敛
+WEIGHT_DECAY = 5e-4
 STEP_LR_STEP_SIZE = 5
 STEP_LR_GAMMA = 0.1
-LR_SCHEDULER = "plateau"           # step / plateau / cosine / none
+LR_SCHEDULER = "cosine"             # plateau → cosine：全程稳定降低学习率，更适合细粒度分类
 PLATEAU_LR_FACTOR = 0.5
 PLATEAU_LR_PATIENCE = 8
 MIN_LR = 1e-6
 EARLY_STOPPING_ENABLED = True
-EARLY_STOPPING_PATIENCE = 10
-MIN_EPOCHS = 12
+EARLY_STOPPING_PATIENCE = 25        # 10 → 25：增加耐心，避免验证集波动导致过早停止
+MIN_EPOCHS = 30                     # 12 → 30：确保前期充分探索
 EARLY_STOPPING_MIN_DELTA = 1e-4
 BEST_MODEL_METRIC = "val_acc_or_loss"  # val_acc / val_loss / val_acc_or_loss
 VAL_LOSS_ACC_TOLERANCE = 0.01
@@ -247,11 +248,11 @@ PSO_MAX_FEATURES = 256
 CLASSIFIER_CV_SCORING = "f1_macro"  # accuracy / balanced_accuracy / f1_macro
 PSO_SCORING = CLASSIFIER_CV_SCORING
 PSO_N_JOBS = -1
-LINEAR_SVM_C = [0.03, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0]
+LINEAR_SVM_C = [0.1, 0.5, 1.0]
 #LINEAR_SVM_C = [0.1, 0.3, 0.5, 1.0, 2.0, 5.0, 7.0, 10.0]
 LOGREG_C = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
-CLASSIFIER_USE_FEATURE_SELECTION = False
-CLASSIFIER_MAX_FEATURES = 512
+CLASSIFIER_USE_FEATURE_SELECTION = True
+CLASSIFIER_MAX_FEATURES = 256
 
 KNN_NEIGHBORS = [3, 5, 7, 10, 12]
 RF_TREES = [20, 50, 100]

@@ -104,7 +104,7 @@ def _format_float_token(value):
 
 
 class MultiViewSpectralDataset(Dataset):
-    def __init__(self, spectral_data, labels, encoding_dir, split_prefix, encoding_method, image_size, load_images=True, wavelet_data=None):
+    def __init__(self, spectral_data, labels, encoding_dir, split_prefix, encoding_method, image_size, load_images=True, wavelet_data=None, augment=False):
         self.spectral_data = torch.as_tensor(spectral_data, dtype=torch.float32)
         self.labels = torch.as_tensor(labels, dtype=torch.long)
         self.encoding_dir = encoding_dir
@@ -113,6 +113,7 @@ class MultiViewSpectralDataset(Dataset):
         self.load_images = bool(load_images)
         self.image_size = int(image_size)
         self.wavelet_data = None if wavelet_data is None else torch.as_tensor(wavelet_data, dtype=torch.float32)
+        self.augment = bool(augment)
         self.transform = transforms.Compose([
             transforms.Resize((image_size, image_size)),
             transforms.ToTensor(),
@@ -131,6 +132,17 @@ class MultiViewSpectralDataset(Dataset):
         image_rgb = np.stack([image_uint8, image_uint8, image_uint8], axis=2)
         return Image.fromarray(image_rgb)
 
+    def _augment_spectral(self, spectral):
+        """Apply mild data augmentation to the spectral signal."""
+        # Add small Gaussian noise (std=0.005 * signal range)
+        noise_std = 0.005 * (spectral.max() - spectral.min() + 1e-8)
+        noise = torch.randn_like(spectral) * noise_std
+        spectral = spectral + noise
+        # Random amplitude scaling (0.95-1.05)
+        scale = 1.0 + 0.05 * (2.0 * torch.rand(1).item() - 1.0)
+        spectral = spectral * scale
+        return spectral
+
     def __getitem__(self, idx):
         if self.wavelet_data is not None:
             secondary = self.wavelet_data[idx]
@@ -141,6 +153,8 @@ class MultiViewSpectralDataset(Dataset):
         else:
             secondary = torch.empty((3, self.image_size, self.image_size), dtype=torch.float32)
         spectral = self.spectral_data[idx].unsqueeze(0)
+        if self.augment:
+            spectral = self._augment_spectral(spectral)
         label = self.labels[idx]
         return secondary, spectral, label
 
@@ -669,6 +683,7 @@ def build_dataloaders(splits, encoding_method, experiment_name):
                 level=getattr(cfg, "WAVELET_LEVEL", 3),
                 include_denoised=getattr(cfg, "WAVELET_INCLUDE_DENOISED", False),
             )
+        augment = (split_name == "train")
         dataset = MultiViewSpectralDataset(
             X_split,
             y_split,
@@ -678,6 +693,7 @@ def build_dataloaders(splits, encoding_method, experiment_name):
             image_size=cfg.IMAGE_SIZE,
             load_images=load_images,
             wavelet_data=wavelet_data,
+            augment=augment,
         )
         dataloaders[split_name] = DataLoader(
             dataset,
@@ -944,8 +960,22 @@ def build_model_optimizer(model):
     return torch.optim.AdamW(groups, weight_decay=cfg.WEIGHT_DECAY)
 
 
+def _compute_class_weights(dataloader, device):
+    """Compute class weights inversely proportional to class frequencies."""
+    all_labels = []
+    for _, _, labels in dataloader:
+        all_labels.append(labels)
+    all_labels = torch.cat(all_labels)
+    class_counts = torch.bincount(all_labels)
+    total = class_counts.sum().float()
+    weights = total / (class_counts.float() * len(class_counts))
+    return weights.to(device)
+
+
 def train_model(model, dataloaders, device, experiment_name):
-    criterion = nn.CrossEntropyLoss(label_smoothing=cfg.LABEL_SMOOTHING)
+    # 计算类别权重，缓解类别不平衡问题
+    class_weights = _compute_class_weights(dataloaders["train"], device)
+    criterion = nn.CrossEntropyLoss(weight=class_weights, label_smoothing=cfg.LABEL_SMOOTHING)
     optimizer = build_model_optimizer(model)
     scheduler = build_training_scheduler(optimizer)
     auxiliary_criterion, auxiliary_optimizer, auxiliary_name = build_auxiliary_objective(model, device)
@@ -1212,7 +1242,7 @@ def select_best_estimator(candidates, X, y):
     cv = StratifiedKFold(n_splits=_min_cv_splits(y, 5), shuffle=True, random_state=cfg.RANDOM_SEED)
     scoring = getattr(cfg, "CLASSIFIER_CV_SCORING", "accuracy")
     for name, estimator in candidates:
-        scores = cross_val_score(estimator, X, y, cv=cv, scoring=scoring, n_jobs=1)
+        scores = cross_val_score(estimator, X, y, cv=cv, scoring=scoring, n_jobs=-1)
         mean_score = float(scores.mean())
         print(f"  {name} CV {scoring}: {mean_score:.4f}")
         if mean_score > best_score:

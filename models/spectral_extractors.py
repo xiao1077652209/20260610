@@ -163,11 +163,18 @@ class ResidualSpectralBlock(nn.Module):
 
 
 class MultiScaleSpectralCNN(nn.Module):
-    """Peak-preserving NIR encoder inspired by the reference end-to-end branch."""
+    """Peak-preserving NIR encoder inspired by the reference end-to-end branch.
+    
+    Reduced capacity version for small datasets (e.g., 产地 with 535 samples).
+    - branch_channels: 48 -> 32
+    - encoder channels: 192 -> 128
+    - projection dim: 512 -> 256
+    - increased dropout in residual blocks for regularization
+    """
     def __init__(self, input_length, output_dim=1024, in_channels=1):
         super().__init__()
         # input_length is unused — model supports variable-length input
-        branch_channels = 48
+        branch_channels = 32  # 从 48 改为 32，降低模型容量
         self.multiscale_stem = nn.ModuleList([
             nn.Sequential(
                 nn.Conv1d(in_channels, branch_channels, kernel_size=k, padding=k // 2, bias=False),
@@ -178,26 +185,26 @@ class MultiScaleSpectralCNN(nn.Module):
         ])
         channels = branch_channels * 3
         self.merge = nn.Sequential(
-            nn.Conv1d(channels, 192, kernel_size=1, bias=False),
-            nn.BatchNorm1d(192),
+            nn.Conv1d(channels, 128, kernel_size=1, bias=False),  # 从 192 改为 128
+            nn.BatchNorm1d(128),
             nn.GELU(),
         )
         self.encoder = nn.Sequential(
-            ResidualSpectralBlock(192, kernel_size=7, dilation=1, dropout=0.08),
+            ResidualSpectralBlock(128, kernel_size=7, dilation=1, dropout=0.15),  # 从 0.08 改为 0.15
             nn.AvgPool1d(2),
-            ResidualSpectralBlock(192, kernel_size=5, dilation=2, dropout=0.10),
+            ResidualSpectralBlock(128, kernel_size=5, dilation=2, dropout=0.20),  # 从 0.10 改为 0.20
             nn.AvgPool1d(2),
-            ResidualSpectralBlock(192, kernel_size=3, dilation=4, dropout=0.12),
+            ResidualSpectralBlock(128, kernel_size=3, dilation=4, dropout=0.25),  # 从 0.12 改为 0.25
         )
         # Several bins retain coarse wavelength position, unlike global pooling alone.
         self.position_pool = nn.AdaptiveAvgPool1d(8)
         self.peak_pool = nn.AdaptiveMaxPool1d(8)
         self.projection = nn.Sequential(
-            nn.Linear(192 * 16, 512),
-            nn.LayerNorm(512),
+            nn.Linear(128 * 16, 256),  # 从 512 改为 256
+            nn.LayerNorm(256),
             nn.GELU(),
-            nn.Dropout(0.25),
-            nn.Linear(512, output_dim),
+            nn.Dropout(0.30),  # 从 0.25 改为 0.30
+            nn.Linear(256, output_dim),
         )
 
     def forward(self, x):
