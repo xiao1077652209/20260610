@@ -134,12 +134,12 @@ class MultiViewSpectralDataset(Dataset):
 
     def _augment_spectral(self, spectral):
         """Apply mild data augmentation to the spectral signal."""
-        # Add small Gaussian noise (std=0.005 * signal range)
-        noise_std = 0.005 * (spectral.max() - spectral.min() + 1e-8)
+        # Add small Gaussian noise (std=0.015 * signal range)
+        noise_std = 0.015 * (spectral.max() - spectral.min() + 1e-8)
         noise = torch.randn_like(spectral) * noise_std
         spectral = spectral + noise
-        # Random amplitude scaling (0.95-1.05)
-        scale = 1.0 + 0.05 * (2.0 * torch.rand(1).item() - 1.0)
+        # Random amplitude scaling (0.90-1.10)
+        scale = 1.0 + 0.10 * (2.0 * torch.rand(1).item() - 1.0)
         spectral = spectral * scale
         return spectral
 

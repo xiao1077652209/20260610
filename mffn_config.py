@@ -49,7 +49,7 @@ DATASET_CONFIGS = {
         "strategy": "max",              # median → max：增加训练样本量，缓解细粒度分类数据不足
         "protocol": "strict",
         "large_data_mode": False,
-        "feature_dim": 256,
+        "feature_dim": 128,             # 256 → 128：降低特征维度，减少过拟合
         "batch_size": 64,
         "epochs": 150,                  # 80 → 150：让模型充分训练
     },
@@ -156,7 +156,7 @@ FREEZE_IMAGE_BACKBONE_STAGES = 2    # freeze slightly deeper visual stages to im
 IMAGE_DROPOUT = 0.10                # used only by the real image branch
 FINAL_CLASSIFIER_TRAIN_SPLIT = "trainval"  # auto / train / trainval
 FINAL_CLASSIFIER_FEATURE_MODE = "enhanced" # fused → enhanced：给分类器提供更丰富的特征组合
-FUSION_DROPOUT = 0.20
+FUSION_DROPOUT = 0.35                # 0.20 → 0.35：增加融合层 Dropout，减少过拟合
 FUSION_HIDDEN_DIM = 256             # used by ACGF lightweight gated fusion
 FUSION_INITIAL_SECONDARY_WEIGHT = 0.10  # image or wavelet residual starts close to spectral-only
 LOAD_SPECTRAL_PRETRAINED = False    # 先设为 False，等跑出光谱-only 模型后再改为 True
@@ -173,11 +173,11 @@ WAVELET_INCLUDE_DENOISED = True      # True: A3 + mid-details + denoised reconst
 WAVELET_BACKBONE_LR = 5e-5
 WAVELET_AUX_LOSS_WEIGHT = 0.05
 USE_CENTER_LOSS = True              # False → True：开启Center Loss，让同类特征更紧凑
-CENTER_LOSS_WEIGHT = 0.03
+CENTER_LOSS_WEIGHT = 0.05           # 0.03 → 0.05：提高Center Loss权重，增强类内紧凑性
 CENTER_LOSS_LR = 1e-3
-CENTER_LOSS_START_EPOCH = 5         # 从第5轮开始，让模型先学习基本分类
+CENTER_LOSS_START_EPOCH = 10        # 5 → 10：推迟Center Loss启动，让模型先充分学习基本分类
 CENTER_LOSS_NORMALIZE = True
-USE_BRANCH_AUX_LOSS = False         # True → False：关闭无效的分支aux loss，改用Center Loss
+USE_BRANCH_AUX_LOSS = True          # False → True：启用分支辅助损失，让小波和光谱分支各自学习分类
 # USE_MODAL_ALIGN_LOSS = False       # 未实现，暂保留
 # MODAL_ALIGN_LOSS_WEIGHT = 0.01     # 未实现，暂保留
 IMAGE_AUX_LOSS_WEIGHT = 0.02         # used only by the real image branch
